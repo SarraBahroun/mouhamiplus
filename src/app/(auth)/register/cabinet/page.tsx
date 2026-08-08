@@ -33,7 +33,7 @@ export default function RegisterCabinetPage() {
       setError(result.error)
       return
     }
-    router.push(`/verify-email?email=${encodeURIComponent(form.email)}&next=${encodeURIComponent('/register/cabinet/team')}`)
+    router.push(`/verify-email?email=${encodeURIComponent(form.email)}`)
   }
 
   const sizes = [

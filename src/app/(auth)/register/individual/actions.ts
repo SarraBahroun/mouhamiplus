@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getSiteOrigin } from '@/lib/site-url'
 
 export interface RegisterIndividualInput {
   firstName: string
@@ -79,9 +80,14 @@ export async function registerIndividual(input: RegisterIndividualInput): Promis
   }
 
   const supabase = await createClient()
-  const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
+  const origin = await getSiteOrigin()
+  const { error: resendError } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/register/plan')}` },
+  })
   if (resendError) {
-    return { error: "Compte créé, mais l'envoi du code de vérification a échoué. Réessayez depuis la page de connexion." }
+    return { error: "Compte créé, mais l'envoi de l'email de vérification a échoué. Réessayez depuis la page de connexion." }
   }
 
   return { error: null }
