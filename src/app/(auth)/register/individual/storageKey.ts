@@ -1,0 +1,1 @@
+export const REGISTER_INDIVIDUAL_STORAGE_KEY = 'mouhamiplus_register_individual'
