@@ -9,7 +9,7 @@ import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 import { IconFolder, IconUsers, IconTeam, IconClipboard, IconScale, IconCheck, IconCash } from '@/components/ui/icons'
 
-const TODAY = '2024-06-12'
+const DATE_LABEL = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
 const quickActions = [
   { label: 'Nouveau dossier', desc: 'Ouvrir un dossier', icon: <IconFolder size={20} />, target: '/cases/add' },
@@ -30,11 +30,12 @@ export default function DashboardPage() {
   const { currentUserName, cabinetName } = useSession()
   const cabinetNotifications = notifications.filter((n) => n.audience === 'cabinet')
 
+  const today = new Date().toISOString().slice(0, 10)
   const openCases = cases.filter((c) => c.status !== 'closed')
   const upcomingHearings = cases
     .filter((c) => c.nextHearing)
     .sort((a, b) => (a.nextHearing! < b.nextHearing! ? -1 : 1))
-  const todaysTasks = cases.flatMap((c) => c.tasks.filter((t) => !t.done && t.dueDate === TODAY))
+  const todaysTasks = cases.flatMap((c) => c.tasks.filter((t) => !t.done && t.dueDate === today))
   const totalRevenue = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0)
 
   const stats = [
@@ -56,8 +57,8 @@ export default function DashboardPage() {
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 600, margin: '0 0 4px' }}>
           Bonjour, {currentUserName || '…'}
         </h1>
-        <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          {cabinetName ?? 'Mon cabinet'} · Mardi 12 juin 2024
+        <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0, textTransform: 'capitalize' }}>
+          {cabinetName ?? 'Mon cabinet'} · {DATE_LABEL.format(new Date())}
         </p>
       </div>
 
