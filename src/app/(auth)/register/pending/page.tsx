@@ -30,7 +30,7 @@ export default function RegisterPendingPage() {
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
             Votre justificatif de virement a bien été reçu. Notre équipe le vérifie et activera votre compte
-            sous peu — vous recevrez un email de confirmation.
+            sous peu — reconnectez-vous dans quelques instants pour accéder à votre espace.
           </p>
         </div>
 

@@ -7,7 +7,7 @@ const COPY: Record<string, { title: string; body: string }> = {
   },
   pending_review: {
     title: 'Paiement en cours de vérification',
-    body: 'Votre justificatif de virement est en cours de vérification par notre équipe. Votre compte sera activé sous peu — vous recevrez un email de confirmation.',
+    body: "Votre justificatif de virement est en cours de vérification par notre équipe. Votre compte sera activé sous peu — reconnectez-vous dans quelques instants pour accéder à votre espace.",
   },
   rejected: {
     title: 'Justificatif refusé',
