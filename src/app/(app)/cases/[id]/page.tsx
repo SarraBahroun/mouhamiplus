@@ -4,6 +4,7 @@ import { use, useRef, useState } from 'react'
 import { useRouter, notFound } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { CASE_STATUS_META } from '@/lib/cases-data'
+import { COURTS_OF_APPEAL_GROUPS, OTHER_COURTS } from '@/lib/tunisian-courts'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/providers/ToastProvider'
@@ -26,7 +27,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
-  const { cases, clients, members, toggleCaseTask, addCaseDocument, getDocumentUrl, addCaseNote, addCaseMessage, loading } = useAppData()
+  const { cases, clients, members, toggleCaseTask, addCaseDocument, getDocumentUrl, addCaseNote, addCaseMessage, addCaseHearing, loading } = useAppData()
   const { currentUserName } = useSession()
   const caseData = cases.find((c) => c.id === id)
   const [tab, setTab] = useState<'info' | 'documents' | 'hearings' | 'notes' | 'tasks' | 'messages'>('info')
@@ -34,6 +35,10 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const [messageDraft, setMessageDraft] = useState('')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [hearingDate, setHearingDate] = useState('')
+  const [hearingCourt, setHearingCourt] = useState('')
+  const [hearingNote, setHearingNote] = useState('')
+  const [addingHearing, setAddingHearing] = useState(false)
 
   if (loading) return null
   if (!caseData) notFound()
@@ -81,6 +86,22 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
     if (!messageDraft.trim()) return
     addCaseMessage(caseData.id, currentUserName || 'Moi', messageDraft, 'out')
     setMessageDraft('')
+  }
+
+  const addHearing = async () => {
+    if (!hearingDate || !hearingCourt) {
+      showToast('Merci de renseigner la date et le tribunal.')
+      return
+    }
+    setAddingHearing(true)
+    const ok = await addCaseHearing(caseData.id, { date: hearingDate, court: hearingCourt, note: hearingNote })
+    setAddingHearing(false)
+    if (ok) {
+      setHearingDate('')
+      setHearingCourt('')
+      setHearingNote('')
+    }
+    showToast(ok ? 'Audience ajoutée' : "Échec de l'ajout de l'audience")
   }
 
   const tabs: { id: typeof tab; label: string; count?: number }[] = [
@@ -202,20 +223,64 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
           )}
 
           {tab === 'hearings' && (
-            <div className="flex flex-col gap-2">
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Audiences</h3>
+            <div className="flex flex-col gap-3">
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 4px' }}>Audiences</h3>
+
+              <div className="flex flex-col gap-2" style={{ padding: '12px 14px', border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-secondary)' }}>
+                <div className="flex gap-2 flex-wrap">
+                  <input
+                    type="datetime-local"
+                    value={hearingDate}
+                    onChange={(e) => setHearingDate(e.target.value)}
+                    style={{ flex: '1 1 200px', padding: '8px 10px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--color-card)', outline: 'none', color: 'var(--color-foreground)' }}
+                  />
+                  <select
+                    value={hearingCourt}
+                    onChange={(e) => setHearingCourt(e.target.value)}
+                    style={{ flex: '1 1 220px', padding: '8px 10px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--color-card)', outline: 'none', color: 'var(--color-foreground)' }}
+                  >
+                    <option value="">Choisir le tribunal…</option>
+                    {COURTS_OF_APPEAL_GROUPS.map((g) => (
+                      <optgroup key={g.courtOfAppeal} label={g.courtOfAppeal}>
+                        {g.courts.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                    <optgroup label="Autres juridictions">
+                      {OTHER_COURTS.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={hearingNote}
+                    onChange={(e) => setHearingNote(e.target.value)}
+                    placeholder="Objet de l'audience (ex. Audience de plaidoirie)…"
+                    style={{ flex: 1, padding: '8px 10px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--color-card)', outline: 'none', color: 'var(--color-foreground)' }}
+                  />
+                  <Btn onClick={addHearing} disabled={addingHearing}>{addingHearing ? '…' : '+ Ajouter'}</Btn>
+                </div>
+              </div>
+
               {caseData.hearings.length === 0 ? (
                 <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)' }}>Aucune audience programmée.</p>
               ) : (
-                caseData.hearings.map((h) => (
-                  <div key={h.id} style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', minWidth: 130 }}>{h.date}</span>
-                    <div>
-                      <div style={{ fontSize: 14, color: 'var(--color-foreground)' }}>{h.note}</div>
-                      <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>{h.court}</div>
+                [...caseData.hearings]
+                  .sort((a, b) => (a.date < b.date ? -1 : 1))
+                  .map((h) => (
+                    <div key={h.id} style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', minWidth: 130 }}>
+                        {new Date(h.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <div>
+                        <div style={{ fontSize: 14, color: 'var(--color-foreground)' }}>{h.note}</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>{h.court}</div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           )}

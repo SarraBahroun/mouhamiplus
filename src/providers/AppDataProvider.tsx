@@ -176,6 +176,12 @@ interface NewCaseInput {
   assignedTo: string
 }
 
+interface NewCaseHearingInput {
+  date: string
+  court: string
+  note: string
+}
+
 interface NewAppointmentRequestInput {
   clientId: string
   caseId: string
@@ -233,6 +239,7 @@ interface AppDataContextValue {
   getDocumentUrl: (storagePath: string) => Promise<string | null>
   addCaseNote: (caseId: string, author: string, text: string) => Promise<void>
   addCaseMessage: (caseId: string, author: string, text: string, direction: CaseMessageDirection) => Promise<void>
+  addCaseHearing: (caseId: string, input: NewCaseHearingInput) => Promise<boolean>
 
   appointmentRequests: AppointmentRequest[]
   addAppointmentRequest: (input: NewAppointmentRequestInput) => Promise<void>
@@ -629,6 +636,33 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const addCaseHearing = async (caseId: string, input: NewCaseHearingInput): Promise<boolean> => {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('case_hearings')
+      .insert({ case_id: caseId, date: input.date, court: input.court, note: input.note })
+      .select()
+      .single()
+    if (error || !data) return false
+    const hearing = mapHearing(data)
+
+    const c = cases.find((x) => x.id === caseId)
+    const futureHearingDates = [...(c?.hearings ?? []), hearing]
+      .map((h) => h.date)
+      .filter((d) => new Date(d).getTime() >= Date.now())
+      .sort()
+    const nextHearing = futureHearingDates[0]
+
+    if (nextHearing && nextHearing !== c?.nextHearing) {
+      await supabase.from('cases').update({ next_hearing: nextHearing }).eq('id', caseId)
+    }
+
+    setCases((prev) =>
+      prev.map((cs) => (cs.id === caseId ? { ...cs, hearings: [...cs.hearings, hearing], nextHearing: nextHearing ?? cs.nextHearing } : cs))
+    )
+    return true
+  }
+
   const addAppointmentRequest = async (input: NewAppointmentRequestInput) => {
     if (!cabinetIdRef.current) return
     const supabase = createClient()
@@ -787,6 +821,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     getDocumentUrl,
     addCaseNote,
     addCaseMessage,
+    addCaseHearing,
     appointmentRequests,
     addAppointmentRequest,
     updateAppointmentRequest,
