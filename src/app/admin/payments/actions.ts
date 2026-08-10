@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendTransactionalEmail } from '@/lib/resend'
+import { sendTransactionalEmail } from '@/lib/mailer'
 
 async function assertPlatformAdmin() {
   const supabase = await createClient()
