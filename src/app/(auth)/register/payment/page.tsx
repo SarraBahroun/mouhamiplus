@@ -34,7 +34,7 @@ function RegisterPaymentForm() {
       setError(result.error)
       return
     }
-    router.push('/register/pending')
+    router.push('/2fa-setup')
   }
 
   if (!plan) {
@@ -81,7 +81,7 @@ function RegisterPaymentForm() {
         </div>
         <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: 0 }}>
           Effectuez le virement du montant du forfait choisi, puis joignez une photo lisible du reçu de virement ci-dessous.
-          Votre compte sera activé après vérification par notre équipe.
+          Votre compte sera activé immédiatement après l&apos;envoi du justificatif.
         </p>
 
         <Divider text="JUSTIFICATIF" />

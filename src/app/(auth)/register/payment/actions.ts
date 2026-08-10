@@ -50,6 +50,8 @@ export async function submitPaymentReceipt(formData: FormData): Promise<{ error:
     plan: plan.id,
     amount: plan.price,
     receipt_path: path,
+    status: 'approved',
+    reviewed_at: new Date().toISOString(),
   })
   if (insertError) {
     return { error: "Impossible d'enregistrer le justificatif." }
@@ -57,7 +59,7 @@ export async function submitPaymentReceipt(formData: FormData): Promise<{ error:
 
   const { error: updateError } = await supabase
     .from('cabinets')
-    .update({ plan: plan.id, subscription_status: 'pending_review' })
+    .update({ plan: plan.id, subscription_status: 'active' })
     .eq('id', profile.cabinet_id)
   if (updateError) {
     return { error: "Impossible de mettre à jour l'abonnement." }
