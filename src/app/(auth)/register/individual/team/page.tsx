@@ -52,7 +52,7 @@ export default function RegisterIndividualTeamPage() {
       return
     }
     sessionStorage.removeItem(REGISTER_INDIVIDUAL_STORAGE_KEY)
-    router.push(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
+    router.push('/register/plan')
   }
 
   return (

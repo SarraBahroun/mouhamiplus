@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getSiteOrigin } from '@/lib/site-url'
 
 export interface RegisterIndividualInput {
   firstName: string
@@ -33,7 +32,7 @@ export async function registerIndividual(input: RegisterIndividualInput): Promis
   const { data: userData, error: userError } = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: false,
+    email_confirm: true,
     user_metadata: {
       first_name: firstName,
       last_name: lastName,
@@ -80,14 +79,11 @@ export async function registerIndividual(input: RegisterIndividualInput): Promis
   }
 
   const supabase = await createClient()
-  const origin = await getSiteOrigin()
-  const { error: resendError } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/register/plan')}` },
-  })
-  if (resendError) {
-    return { error: "Compte créé, mais l'envoi de l'email de vérification a échoué. Réessayez depuis la page de connexion." }
+  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+  if (signInError) {
+    // Le compte est créé et confirmé — seule la connexion automatique a échoué.
+    // On ne supprime rien : l'utilisateur peut se connecter manuellement.
+    return { error: 'Compte créé. Merci de vous connecter depuis la page de connexion.' }
   }
 
   return { error: null }
