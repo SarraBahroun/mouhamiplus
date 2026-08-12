@@ -246,6 +246,7 @@ interface AppDataContextValue {
 
   cases: Case[]
   addCase: (input: NewCaseInput) => Promise<string | null>
+  updateCaseStatus: (caseId: string, status: CaseStatus) => Promise<boolean>
   toggleCaseTask: (caseId: string, taskId: string) => Promise<void>
   addCaseDocument: (caseId: string, file: File) => Promise<boolean>
   getDocumentUrl: (storagePath: string) => Promise<string | null>
@@ -601,6 +602,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return newCase.id
   }
 
+  const updateCaseStatus = async (caseId: string, status: CaseStatus): Promise<boolean> => {
+    const supabase = createClient()
+    const { error } = await supabase.from('cases').update({ status }).eq('id', caseId)
+    if (error) return false
+    setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, status } : c)))
+    return true
+  }
+
   const toggleCaseTask = async (caseId: string, taskId: string) => {
     const c = cases.find((x) => x.id === caseId)
     const task = c?.tasks.find((t) => t.id === taskId)
@@ -849,6 +858,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     addClient,
     cases,
     addCase,
+    updateCaseStatus,
     toggleCaseTask,
     addCaseDocument,
     getDocumentUrl,

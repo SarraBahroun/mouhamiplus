@@ -4,13 +4,106 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { CaseStatus, CASE_STATUS_META } from '@/lib/cases-data'
-import { useAppData } from '@/providers/AppDataProvider'
+import { useAppData, Case } from '@/providers/AppDataProvider'
+import { useToast } from '@/providers/ToastProvider'
+
+const STATUSES: CaseStatus[] = ['open', 'pending', 'closed']
+
+function KanbanBoard({
+  cases,
+  clients,
+  onDrop,
+  onOpen,
+}: {
+  cases: Case[]
+  clients: { id: string; name: string }[]
+  onDrop: (caseId: string, status: CaseStatus) => void
+  onOpen: (caseId: string) => void
+}) {
+  const [dragOverStatus, setDragOverStatus] = useState<CaseStatus | null>(null)
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ alignItems: 'start' }}>
+      {STATUSES.map((status) => {
+        const meta = CASE_STATUS_META[status]
+        const columnCases = cases.filter((c) => c.status === status)
+        return (
+          <div
+            key={status}
+            onDragOver={(e) => { e.preventDefault(); setDragOverStatus(status) }}
+            onDragLeave={() => setDragOverStatus((s) => (s === status ? null : s))}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDragOverStatus(null)
+              const caseId = e.dataTransfer.getData('text/case-id')
+              if (caseId) onDrop(caseId, status)
+            }}
+            style={{
+              background: dragOverStatus === status ? 'rgba(22, 35, 63,0.03)' : 'var(--color-secondary)',
+              border: `1px dashed ${dragOverStatus === status ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              borderRadius: 6,
+              padding: 10,
+              minHeight: 120,
+              transition: 'background 0.12s, border-color 0.12s',
+            }}
+          >
+            <div className="flex items-center justify-between" style={{ padding: '2px 4px 10px' }}>
+              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>
+                {meta.label}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{columnCases.length}</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {columnCases.map((c) => {
+                const client = clients.find((cl) => cl.id === c.clientId)
+                return (
+                  <div
+                    key={c.id}
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/case-id', c.id)}
+                    onClick={() => onOpen(c.id)}
+                    style={{
+                      background: 'var(--color-card)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 4,
+                      padding: '10px 12px',
+                      cursor: 'grab',
+                      boxShadow: '0 1px 2px rgba(28,20,16,0.04)',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>{c.title}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>
+                      Réf. {c.reference}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 4 }}>{client?.name}</div>
+                  </div>
+                )
+              })}
+              {columnCases.length === 0 && (
+                <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', textAlign: 'center', padding: '10px 0', margin: 0 }}>Aucun dossier</p>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function CasesPage() {
   const router = useRouter()
-  const { cases: initialCases, clients, members } = useAppData()
+  const { showToast } = useToast()
+  const { cases: initialCases, clients, members, updateCaseStatus } = useAppData()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<CaseStatus | 'all'>('all')
+  const [view, setView] = useState<'list' | 'board'>('list')
+
+  const handleStatusDrop = async (caseId: string, status: CaseStatus) => {
+    const current = initialCases.find((c) => c.id === caseId)
+    if (!current || current.status === status) return
+    const ok = await updateCaseStatus(caseId, status)
+    showToast(ok ? 'Statut mis à jour' : "Impossible de changer le statut (vérifiez vos permissions)")
+  }
 
   const filtered = initialCases.filter((c) => {
     const client = clients.find((cl) => cl.id === c.clientId)
@@ -124,9 +217,38 @@ export default function CasesPage() {
               </button>
             ))}
           </div>
+          <div className="flex gap-1" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
+            {([{ id: 'list', label: '☰ Liste' }, { id: 'board', label: '▦ Tableau' }] as const).map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setView(v.id)}
+                style={{
+                  padding: '5px 10px',
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  border: 'none',
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  background: view === v.id ? 'var(--color-card)' : 'transparent',
+                  color: view === v.id ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
+                  fontWeight: view === v.id ? 600 : 400,
+                  boxShadow: view === v.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.12s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {view === 'board' && (
+          <KanbanBoard cases={filtered} clients={clients} onDrop={handleStatusDrop} onOpen={(id) => router.push(`/cases/${id}`)} />
+        )}
+
         {/* Table */}
+        {view === 'list' && (
         <div style={{ border: '1px solid var(--color-border)', borderRadius: 6, overflowX: 'auto', background: 'var(--color-card)' }}>
           <div
             style={{
@@ -186,6 +308,7 @@ export default function CasesPage() {
             )
           })}
         </div>
+        )}
 
         {/* Répartition + prochaines audiences */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
