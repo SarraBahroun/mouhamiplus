@@ -118,6 +118,8 @@ export interface Invoice {
   clientId: string
   caseId?: string
   amount: number
+  vatRate: number
+  stampDuty: number
   issuedAt: string
   dueAt?: string
   status: InvoiceStatus
@@ -206,6 +208,8 @@ interface NewInvoiceInput {
   clientId: string
   caseId?: string
   amount: number
+  vatRate: number
+  stampDuty: number
   dueAt?: string
 }
 
@@ -389,6 +393,8 @@ function mapInvoice(row: Record<string, unknown>): Invoice {
     clientId: row.client_id as string,
     caseId: (row.case_id as string) ?? undefined,
     amount: Number(row.amount),
+    vatRate: Number(row.vat_rate ?? 19),
+    stampDuty: Number(row.stamp_duty ?? 1),
     issuedAt: row.issued_at as string,
     dueAt: (row.due_at as string) ?? undefined,
     status: row.status as InvoiceStatus,
@@ -747,6 +753,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         client_id: input.clientId,
         case_id: input.caseId || null,
         amount: input.amount,
+        vat_rate: input.vatRate,
+        stamp_duty: input.stampDuty,
         due_at: input.dueAt || null,
         status: 'pending',
       })

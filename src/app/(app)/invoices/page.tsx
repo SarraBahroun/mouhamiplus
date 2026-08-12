@@ -14,17 +14,20 @@ export default function InvoicesPage() {
   const { showToast } = useToast()
   const { invoices, clients, cases, addInvoice, updateInvoiceStatus } = useAppData()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ clientId: '', caseId: '', amount: '', dueAt: '' })
+  const [form, setForm] = useState({ clientId: '', caseId: '', amount: '', vatRate: '19', stampDuty: '1', dueAt: '' })
   const [loading, setLoading] = useState(false)
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
 
-  const total = invoices.reduce((sum, i) => sum + i.amount, 0)
-  const paid = invoices.filter((i) => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0)
-  const pending = invoices.filter((i) => i.status === 'pending').reduce((sum, i) => sum + i.amount, 0)
-  const overdue = invoices.filter((i) => i.status === 'overdue').reduce((sum, i) => sum + i.amount, 0)
+  const ttc = (i: { amount: number; vatRate: number; stampDuty: number }) =>
+    i.amount * (1 + i.vatRate / 100) + i.stampDuty
+
+  const total = invoices.reduce((sum, i) => sum + ttc(i), 0)
+  const paid = invoices.filter((i) => i.status === 'paid').reduce((sum, i) => sum + ttc(i), 0)
+  const pending = invoices.filter((i) => i.status === 'pending').reduce((sum, i) => sum + ttc(i), 0)
+  const overdue = invoices.filter((i) => i.status === 'overdue').reduce((sum, i) => sum + ttc(i), 0)
 
   const stats = [
-    { label: 'Total facturé', value: `${total.toLocaleString('fr-FR')} DT`, sub: `${invoices.length} facture${invoices.length !== 1 ? 's' : ''}`, icon: '📄' },
+    { label: 'Total facturé (TTC)', value: `${total.toLocaleString('fr-FR')} DT`, sub: `${invoices.length} facture${invoices.length !== 1 ? 's' : ''}`, icon: '📄' },
     { label: 'Payées', value: `${paid.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'paid').length} facture${invoices.filter((i) => i.status === 'paid').length !== 1 ? 's' : ''}`, icon: '✅' },
     { label: 'En attente', value: `${pending.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'pending').length} facture${invoices.filter((i) => i.status === 'pending').length !== 1 ? 's' : ''}`, icon: '⏳' },
     { label: 'En retard', value: `${overdue.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'overdue').length} facture${invoices.filter((i) => i.status === 'overdue').length !== 1 ? 's' : ''}`, icon: '⚠️' },
@@ -36,13 +39,25 @@ export default function InvoicesPage() {
     if (!form.clientId || !form.amount) return
     setLoading(true)
     const number = `FAC-${new Date().getFullYear()}-${String(invoices.length + 1).padStart(3, '0')}`
-    const id = await addInvoice({ number, clientId: form.clientId, caseId: form.caseId || undefined, amount: Number(form.amount), dueAt: form.dueAt || undefined })
+    const id = await addInvoice({
+      number,
+      clientId: form.clientId,
+      caseId: form.caseId || undefined,
+      amount: Number(form.amount),
+      vatRate: Number(form.vatRate) || 0,
+      stampDuty: Number(form.stampDuty) || 0,
+      dueAt: form.dueAt || undefined,
+    })
     setLoading(false)
     if (!id) { showToast('Échec de la création de la facture'); return }
     showToast('Facture créée')
-    setForm({ clientId: '', caseId: '', amount: '', dueAt: '' })
+    setForm({ clientId: '', caseId: '', amount: '', vatRate: '19', stampDuty: '1', dueAt: '' })
     setShowForm(false)
   }
+
+  const formTtc = form.amount
+    ? Number(form.amount) * (1 + (Number(form.vatRate) || 0) / 100) + (Number(form.stampDuty) || 0)
+    : 0
 
   return (
     <div>
@@ -85,9 +100,21 @@ export default function InvoicesPage() {
                 options={[{ value: '', label: '— Aucun —' }, ...casesForClient.map((c) => ({ value: c.id, label: c.title }))]}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Montant (DT)" type="number" value={form.amount} onChange={f('amount')} placeholder="2400" />
+                <Input label="Montant HT (DT)" type="number" value={form.amount} onChange={f('amount')} placeholder="2400" />
                 <Input label="Échéance" type="date" value={form.dueAt} onChange={f('dueAt')} />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input label="Taux TVA (%)" type="number" value={form.vatRate} onChange={f('vatRate')} placeholder="19" />
+                <Input label="Timbre fiscal (DT)" type="number" value={form.stampDuty} onChange={f('stampDuty')} placeholder="1" />
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--color-muted-foreground)', margin: 0 }}>
+                Taux par défaut à titre indicatif — à confirmer avec votre comptable selon votre régime (les honoraires d&apos;avocat peuvent relever d&apos;un taux de TVA différent du taux normal).
+              </p>
+              {form.amount && (
+                <p style={{ fontSize: 13, color: 'var(--color-foreground)', margin: 0 }}>
+                  Total TTC : <strong>{formTtc.toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT</strong>
+                </p>
+              )}
               <Btn onClick={submit} disabled={loading || !form.clientId || !form.amount}>{loading ? '…' : 'Créer la facture'}</Btn>
             </div>
           </div>
@@ -136,7 +163,12 @@ export default function InvoicesPage() {
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>{client?.name ?? '—'}</span>
                 <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{new Date(inv.issuedAt).toLocaleDateString('fr-FR')}</span>
-                <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>{inv.amount.toLocaleString('fr-FR')} DT</span>
+                <span
+                  title={`HT ${inv.amount.toLocaleString('fr-FR')} DT + TVA ${inv.vatRate}% + timbre ${inv.stampDuty.toLocaleString('fr-FR')} DT`}
+                  style={{ fontSize: 13, color: 'var(--color-foreground)', cursor: 'help' }}
+                >
+                  {ttc(inv).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>TTC</span>
+                </span>
                 <select
                   value={inv.status}
                   onChange={(e) => updateInvoiceStatus(inv.id, e.target.value as InvoiceStatus)}
