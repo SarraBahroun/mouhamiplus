@@ -109,6 +109,16 @@ export default function SettingsPage() {
         </div>
 
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '20px 22px' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 4px' }}>Délais légaux (Tunisie)</h2>
+              <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: 0 }}>Référentiel des délais de recours (CPCC) — à vérifier avant utilisation</p>
+            </div>
+            <Btn variant="secondary" onClick={() => router.push('/settings/deadlines')}>Configurer</Btn>
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '20px 22px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>Notifications</h2>
           <div className="flex flex-col gap-3">
             {[
