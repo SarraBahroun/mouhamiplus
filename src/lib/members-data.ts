@@ -28,9 +28,26 @@ export const ROLE_META: Record<MemberRole, { label: string; color: string; bg: s
   },
 }
 
+// Taxonomie des domaines juridiques — utilisée à la fois pour le domaine d'un
+// dossier (cases.practice_area, contrainte en base par un CHECK, voir
+// supabase/migrations/0011_practice_area_taxonomy.sql) et les spécialités
+// d'un collaborateur. Toute modification de cette liste doit être répercutée
+// dans cette migration pour rester synchronisée.
 export const SPECIALITIES = [
-  'Droit des affaires', 'Droit pénal', 'Droit de la famille', 'Droit immobilier',
-  'Droit du travail', 'Droit administratif', 'Droit fiscal', 'Propriété intellectuelle',
+  'Droit civil',
+  'Droit pénal',
+  'Droit commercial et des affaires',
+  'Droit des sociétés',
+  'Droit du travail et sécurité sociale',
+  'Statut personnel et succession',
+  'Droit immobilier et foncier',
+  'Droit administratif',
+  'Droit fiscal',
+  'Droit des assurances',
+  'Droit bancaire',
+  'Propriété intellectuelle',
+  'Arbitrage et médiation',
+  'Contentieux et recouvrement',
 ]
 
 export const ACTION_COLORS: Record<string, { color: string; bg: string }> = {
