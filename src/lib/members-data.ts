@@ -33,16 +33,6 @@ export const SPECIALITIES = [
   'Droit du travail', 'Droit administratif', 'Droit fiscal', 'Propriété intellectuelle',
 ]
 
-// Journal d'audit — reste mock pour l'instant (voir Phase 2 du plan de migration).
-export const auditEntries = [
-  { id: 1, date: '2024-06-12 14:32', user: 'Amine Trabelsi', userRole: 'collaborator' as MemberRole, action: 'MODIFICATION', entity: 'Dossier Bensalem c/ TechTun', detail: { before: 'Statut: En cours', after: 'Statut: Clôturé' } },
-  { id: 2, date: '2024-06-12 11:15', user: 'Nadia Chaouachi', userRole: 'secretary' as MemberRole, action: 'AJOUT', entity: 'Document — Assignation_v3.pdf', detail: { before: '—', after: 'Fichier ajouté (124 Ko)' } },
-  { id: 3, date: '2024-06-11 16:47', user: 'Yassine Karray', userRole: 'collaborator' as MemberRole, action: 'EXPORT', entity: 'Dossier succession Mrad', detail: { before: '—', after: 'Export PDF généré' } },
-  { id: 4, date: '2024-06-11 09:03', user: 'Amine Trabelsi', userRole: 'collaborator' as MemberRole, action: 'SUPPRESSION', entity: 'Note interne #47', detail: { before: 'Note: "Audience reportée au 18/06"', after: 'Supprimée' } },
-  { id: 5, date: '2024-06-10 17:28', user: 'Salma Ben Fredj', userRole: 'intern' as MemberRole, action: 'LECTURE', entity: 'Dossier litige immobilier Gharbi', detail: { before: '—', after: 'Consultation (8 min)' } },
-  { id: 6, date: '2024-06-10 10:11', user: 'Nadia Chaouachi', userRole: 'secretary' as MemberRole, action: 'MODIFICATION', entity: 'Agenda — Rendez-vous client', detail: { before: '15/06 à 10h00', after: '16/06 à 14h30' } },
-]
-
 export const ACTION_COLORS: Record<string, { color: string; bg: string }> = {
   MODIFICATION: { color: '#1565C0', bg: 'rgba(21,101,192,0.08)' },
   AJOUT: { color: '#2E7D32', bg: 'rgba(46,125,50,0.08)' },

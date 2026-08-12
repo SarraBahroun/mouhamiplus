@@ -151,6 +151,18 @@ export interface Correspondence {
   sentAt: string
 }
 
+export interface AuditLogEntry {
+  id: string
+  date: string
+  actorId: string | null
+  actorName: string
+  actorRole: MemberRole | null
+  action: string
+  entity: string
+  detailBefore: string | null
+  detailAfter: string | null
+}
+
 interface NewMemberInput {
   firstName: string
   lastName: string
@@ -262,6 +274,8 @@ interface AppDataContextValue {
 
   correspondence: Correspondence[]
   addCorrespondence: (input: NewCorrespondenceInput) => Promise<string | null>
+
+  auditLog: AuditLogEntry[]
 
   refresh: () => Promise<void>
 }
@@ -403,6 +417,21 @@ function mapContract(row: Record<string, unknown>): Contract {
   }
 }
 
+function mapAuditLogEntry(row: Record<string, unknown>): AuditLogEntry {
+  const actor = row.profiles as { first_name?: string; last_name?: string } | null
+  return {
+    id: row.id as string,
+    date: row.created_at as string,
+    actorId: (row.actor_id as string) ?? null,
+    actorName: actor ? `${actor.first_name ?? ''} ${actor.last_name ?? ''}`.trim() : 'Utilisateur supprimé',
+    actorRole: (row.actor_role as MemberRole) ?? null,
+    action: row.action as string,
+    entity: row.entity as string,
+    detailBefore: (row.detail_before as string) ?? null,
+    detailAfter: (row.detail_after as string) ?? null,
+  }
+}
+
 function mapCorrespondence(row: Record<string, unknown>): Correspondence {
   return {
     id: row.id as string,
@@ -426,6 +455,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
   const [correspondence, setCorrespondence] = useState<Correspondence[]>([])
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([])
   const cabinetIdRef = useRef<string | null>(null)
 
   const load = useCallback(async () => {
@@ -444,11 +474,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setPayments([])
       setContracts([])
       setCorrespondence([])
+      setAuditLog([])
       setLoading(false)
       return
     }
 
-    const [profilesRes, clientsRes, casesRes, overridesRes, apptRes, notifRes, invoicesRes, paymentsRes, contractsRes, correspondenceRes] = await Promise.all([
+    const [profilesRes, clientsRes, casesRes, overridesRes, apptRes, notifRes, invoicesRes, paymentsRes, contractsRes, correspondenceRes, auditLogRes] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('clients').select('*'),
       supabase.from('cases').select('*, case_documents(*), case_hearings(*), case_notes(*), case_tasks(*), case_messages(*)'),
@@ -459,6 +490,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       supabase.from('payments').select('*').order('date', { ascending: false }),
       supabase.from('contracts').select('*'),
       supabase.from('correspondence').select('*').order('sent_at', { ascending: false }),
+      supabase.from('audit_log').select('*, profiles(first_name, last_name)').order('created_at', { ascending: false }).limit(200),
     ])
 
     const myProfile = profilesRes.data?.find((p) => p.id === user.id)
@@ -476,6 +508,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setPayments((paymentsRes.data ?? []).map(mapPayment))
     setContracts((contractsRes.data ?? []).map(mapContract))
     setCorrespondence((correspondenceRes.data ?? []).map(mapCorrespondence))
+    setAuditLog((auditLogRes.data ?? []).map(mapAuditLogEntry))
     setLoading(false)
   }, [])
 
@@ -838,6 +871,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     updateContractStatus,
     correspondence,
     addCorrespondence,
+    auditLog,
     refresh: load,
   }
 

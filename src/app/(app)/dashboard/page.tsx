@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
 import { RoleBadge } from '@/components/members/RoleBadge'
-import { MemberRole } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 import { IconFolder, IconUsers, IconTeam, IconClipboard, IconScale, IconCheck, IconCash } from '@/components/ui/icons'
@@ -18,15 +17,19 @@ const quickActions = [
   { label: "Journal d'audit", desc: 'Traçabilité des actions', icon: <IconClipboard size={20} />, target: '/members/audit' },
 ]
 
-const recentAudit = [
-  { user: 'Nadia Chaouachi', action: 'Ajout document', entity: 'Assignation_v3.pdf', time: 'il y a 1h', role: 'secretary' as MemberRole },
-  { user: 'Yassine Karray', action: 'Modification dossier', entity: 'Bensalem c/ TechTun', time: 'il y a 3h', role: 'collaborator' as MemberRole },
-  { user: 'Salma Ben Fredj', action: 'Consultation', entity: 'Litige Gharbi', time: 'Hier 17h28', role: 'intern' as MemberRole },
-]
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const diffMin = Math.round(diffMs / 60000)
+  if (diffMin < 1) return "à l'instant"
+  if (diffMin < 60) return `il y a ${diffMin} min`
+  const diffH = Math.round(diffMin / 60)
+  if (diffH < 24) return `il y a ${diffH}h`
+  return new Date(iso).toLocaleDateString('fr-FR')
+}
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { cases, members, clients, notifications, markNotificationRead, payments } = useAppData()
+  const { cases, members, clients, notifications, markNotificationRead, payments, auditLog } = useAppData()
   const { currentUserName, cabinetName } = useSession()
   const cabinetNotifications = notifications.filter((n) => n.audience === 'cabinet')
 
@@ -129,28 +132,31 @@ export default function DashboardPage() {
             </button>
           </div>
           <div className="flex flex-col gap-0">
-            {recentAudit.map((a, i) => (
+            {auditLog.length === 0 && (
+              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucune activité récente.</p>
+            )}
+            {auditLog.slice(0, 3).map((a, i) => (
               <div
-                key={i}
+                key={a.id}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 10,
                   padding: '10px 0',
-                  borderBottom: i < recentAudit.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  borderBottom: i < Math.min(auditLog.length, 3) - 1 ? '1px solid var(--color-border)' : 'none',
                 }}
               >
-                <Avatar initials={a.user.split(' ').map((w) => w[0]).join('').slice(0, 2)} size={28} />
+                <Avatar initials={a.actorName.split(' ').map((w) => w[0]).join('').slice(0, 2) || '??'} size={28} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>
-                    {a.user} <span style={{ fontWeight: 400, color: 'var(--color-muted-foreground)' }}>— {a.action}</span>
+                    {a.actorName} <span style={{ fontWeight: 400, color: 'var(--color-muted-foreground)' }}>— {a.action}</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {a.entity}
                   </div>
                 </div>
                 <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
-                  {a.time}
+                  {timeAgo(a.date)}
                 </span>
               </div>
             ))}
