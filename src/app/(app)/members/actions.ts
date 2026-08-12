@@ -22,6 +22,9 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
   const { data: myProfile } = await supabase.from('profiles').select('cabinet_id').eq('id', user.id).single()
   if (!myProfile) return { error: 'Profil introuvable.' }
 
+  const { data: allowed } = await supabase.rpc('auth_permission', { perm: 'manageUsers' })
+  if (!allowed) return { error: "Vous n'avez pas la permission d'ajouter des membres." }
+
   const admin = createAdminClient()
   const tempPassword = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
 

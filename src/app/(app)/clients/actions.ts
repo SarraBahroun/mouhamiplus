@@ -2,13 +2,17 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { sendTransactionalEmail } from '@/lib/mailer'
 
-export type InviteClientResult = { tempPassword: string } | { error: string }
+export type InviteClientResult = { tempPassword: string; emailed: boolean } | { error: string }
 
 export async function inviteClient(clientId: string): Promise<InviteClientResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Non authentifié.' }
+
+  const { data: allowed } = await supabase.rpc('auth_permission', { perm: 'manageClients' })
+  if (!allowed) return { error: "Vous n'avez pas la permission de gérer les accès clients." }
 
   const admin = createAdminClient()
   const { data: clientRow, error: clientError } = await admin
@@ -40,5 +44,18 @@ export async function inviteClient(clientId: string): Promise<InviteClientResult
     return { error: "Impossible d'associer le compte au client." }
   }
 
-  return { tempPassword }
+  const { error: emailError } = await sendTransactionalEmail({
+    to: clientRow.email,
+    subject: 'Votre accès à votre espace client Mouhami+',
+    html: `<p>Bonjour ${clientRow.name},</p>
+<p>Votre cabinet vous a créé un accès à votre espace client Mouhami+.</p>
+<p>Identifiants de connexion :</p>
+<ul>
+  <li>Email : ${clientRow.email}</li>
+  <li>Mot de passe temporaire : <strong>${tempPassword}</strong></li>
+</ul>
+<p>Connectez-vous depuis la page espace client et pensez à changer ce mot de passe.</p>`,
+  })
+
+  return { tempPassword, emailed: !emailError }
 }

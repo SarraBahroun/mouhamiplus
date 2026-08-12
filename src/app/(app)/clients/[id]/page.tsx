@@ -34,7 +34,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       showToast(result.error)
       return
     }
-    showToast(`Accès créé — mot de passe temporaire : ${result.tempPassword}`)
+    showToast(
+      result.emailed
+        ? 'Accès créé — identifiants envoyés au client par email'
+        : `Accès créé, mais l'email n'a pas pu être envoyé — mot de passe temporaire : ${result.tempPassword}`
+    )
     await refresh()
   }
 
