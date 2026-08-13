@@ -9,21 +9,44 @@ import { Btn } from '@/components/ui/Btn'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
 import { ClientType } from '@/lib/clients-data'
+import { inviteClient } from '../actions'
 
 export default function ClientAddPage() {
   const router = useRouter()
   const { showToast } = useToast()
-  const { addClient } = useAppData()
+  const { addClient, refresh } = useAppData()
   const [form, setForm] = useState({ name: '', type: 'individual', email: '', phone: '', address: '', city: '' })
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
 
   const submit = async () => {
+    const nextErrors: typeof errors = {}
+    if (!form.name.trim()) nextErrors.name = 'Le nom est obligatoire.'
+    if (!form.email.trim()) nextErrors.email = "L'email est obligatoire pour créer l'accès à l'espace client."
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+
     setLoading(true)
     const id = await addClient({ ...form, type: form.type as ClientType })
+    if (!id) {
+      setLoading(false)
+      showToast("Échec de la création du client")
+      return
+    }
+
+    const invite = await inviteClient(id)
+    if ('error' in invite) {
+      showToast(`Client ajouté, mais l'accès n'a pas pu être créé : ${invite.error}`)
+    } else {
+      await refresh()
+      showToast(
+        invite.emailed
+          ? 'Client ajouté — identifiants envoyés par email'
+          : `Client ajouté — mot de passe temporaire : ${invite.tempPassword}`
+      )
+    }
     setLoading(false)
-    if (!id) { showToast("Échec de la création du client"); return }
-    showToast('Client ajouté avec succès')
     router.push(`/clients/${id}`)
   }
 
@@ -44,14 +67,22 @@ export default function ClientAddPage() {
             onChange={f('type')}
             options={[{ value: 'individual', label: 'Particulier' }, { value: 'company', label: 'Entreprise' }]}
           />
-          <Input label="Nom complet / Raison sociale" value={form.name} onChange={f('name')} placeholder="Ahmed Ben Salah" />
-          <Input label="Adresse e-mail" type="email" value={form.email} onChange={f('email')} placeholder="client@email.tn" />
+          <Input label="Nom complet / Raison sociale" value={form.name} onChange={f('name')} placeholder="Ahmed Ben Salah" error={errors.name} />
+          <Input
+            label="Adresse e-mail"
+            type="email"
+            value={form.email}
+            onChange={f('email')}
+            placeholder="client@email.tn"
+            error={errors.email}
+            hint={errors.email ? undefined : "Utilisée pour créer automatiquement l'accès à l'espace client."}
+          />
           <Input label="Téléphone" type="tel" value={form.phone} onChange={f('phone')} placeholder="+216 XX XXX XXX" />
           <Input label="Adresse" value={form.address} onChange={f('address')} placeholder="12 Rue de Marseille" />
           <Input label="Ville" value={form.city} onChange={f('city')} placeholder="Tunis" />
 
           <div className="flex flex-col gap-2">
-            <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Créer la fiche client'}</Btn>
+            <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Créer la fiche client et son accès'}</Btn>
             <Btn fullWidth variant="ghost" onClick={() => router.push('/clients')}>Annuler</Btn>
           </div>
         </div>
