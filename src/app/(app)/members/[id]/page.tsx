@@ -7,7 +7,7 @@ import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { StatusDot } from '@/components/members/StatusDot'
-import { ROLE_META } from '@/lib/members-data'
+import { ROLE_META, ACTION_COLORS } from '@/lib/members-data'
 import { PERMISSION_DEFS, ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useAppData } from '@/providers/AppDataProvider'
 
@@ -17,19 +17,21 @@ const EDIT_TARGET: Record<string, string> = {
   intern: '/members/add/intern',
 }
 
-const recentActivity = [
-  { time: "Aujourd'hui 14:32", action: 'Consultation dossier Bensalem', icon: '👁️' },
-  { time: "Aujourd'hui 11:15", action: 'Ajout document — Assignation_v3.pdf', icon: '📎' },
-  { time: 'Hier 16:47', action: 'Export dossier succession Mrad', icon: '📤' },
-  { time: 'Hier 09:03', action: 'Modification note interne #47', icon: '✏️' },
-]
+const ACTION_ICONS: Record<string, string> = {
+  AJOUT: '📎',
+  MODIFICATION: '✏️',
+  SUPPRESSION: '🗑️',
+  EXPORT: '📤',
+  LECTURE: '👁️',
+}
 
 export default function MemberProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { members, cases, toggleMemberStatus, memberPermissionOverrides, loading } = useAppData()
+  const { members, cases, auditLog, toggleMemberStatus, memberPermissionOverrides, loading } = useAppData()
   const member = members.find((m) => m.id === id)
   const assignedCases = cases.filter((c) => c.assignedTo === id)
+  const memberActivity = auditLog.filter((e) => e.actorId === id).slice(0, 15)
   const supervisor = member?.supervisorId ? members.find((m) => m.id === member.supervisorId) : null
   const [tab, setTab] = useState<'info' | 'cases' | 'activity' | 'permissions'>('info')
 
@@ -176,15 +178,23 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
           {tab === 'activity' && (
             <div className="flex flex-col gap-2">
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Activité récente</h3>
-              {recentActivity.map((a, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '9px 0', borderBottom: i < recentActivity.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-                  <span style={{ fontSize: 16 }}>{a.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: 'var(--color-foreground)' }}>{a.action}</div>
-                    <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', marginTop: 2 }}>{a.time}</div>
+              {memberActivity.length === 0 ? (
+                <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)' }}>Aucune activité enregistrée.</p>
+              ) : (
+                memberActivity.map((a, i) => (
+                  <div key={a.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '9px 0', borderBottom: i < memberActivity.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                    <span style={{ fontSize: 16 }}>{ACTION_ICONS[a.action] ?? '•'}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: 'var(--color-foreground)' }}>
+                        {ACTION_COLORS[a.action] ? a.action.charAt(0) + a.action.slice(1).toLowerCase() : a.action} — {a.entity}
+                      </div>
+                      <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', marginTop: 2 }}>
+                        {new Date(a.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
 

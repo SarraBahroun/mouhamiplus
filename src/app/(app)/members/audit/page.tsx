@@ -1,20 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { ACTION_COLORS } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useSession } from '@/providers/SessionProvider'
 
 export default function MembersAuditPage() {
   const router = useRouter()
   const { auditLog, loading } = useAppData()
+  const { hasPermission, loading: sessionLoading } = useSession()
   const [expanded, setExpanded] = useState<string | null>(null)
   const [userFilter, setUserFilter] = useState('all')
   const [actionFilter, setActionFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
+
+  useEffect(() => {
+    if (!sessionLoading && !hasPermission('manageUsers')) {
+      router.replace('/members')
+    }
+  }, [sessionLoading, hasPermission, router])
+
+  if (!sessionLoading && !hasPermission('manageUsers')) return null
 
   const users = ['all', ...Array.from(new Set(auditLog.map((e) => e.actorName)))]
   const actions = ['all', ...Array.from(new Set(auditLog.map((e) => e.action)))]

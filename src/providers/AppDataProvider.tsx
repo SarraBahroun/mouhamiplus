@@ -24,6 +24,11 @@ export interface Member {
   lastActive: string
 }
 
+export interface ClientNotificationPreferences {
+  email: boolean
+  sms: boolean
+}
+
 export interface Client {
   id: string
   name: string
@@ -35,6 +40,7 @@ export interface Client {
   createdAt: string
   lastActivity: string
   hasPortalAccess: boolean
+  notificationPreferences: ClientNotificationPreferences
 }
 
 export interface CaseDocument {
@@ -317,6 +323,10 @@ function mapClient(row: Record<string, unknown>): Client {
     createdAt: row.created_at as string,
     lastActivity: row.last_activity_at as string,
     hasPortalAccess: Boolean(row.auth_user_id),
+    notificationPreferences: {
+      email: (row.notification_preferences as { email?: boolean } | null)?.email ?? true,
+      sms: (row.notification_preferences as { sms?: boolean } | null)?.sms ?? false,
+    },
   }
 }
 

@@ -23,6 +23,16 @@ export default function SettingsPage() {
   useEffect(() => {
     if (realProfile) {
       setProfile({ firstName: realProfile.firstName, lastName: realProfile.lastName, phone: realProfile.phone })
+      const supabase = createClient()
+      supabase
+        .from('profiles')
+        .select('notification_preferences')
+        .eq('id', realProfile.id)
+        .single()
+        .then(({ data }) => {
+          const prefs = data?.notification_preferences as Partial<typeof notifications> | null
+          if (prefs) setNotifications((prev) => ({ ...prev, ...prefs }))
+        })
     }
   }, [realProfile])
 
@@ -46,7 +56,12 @@ export default function SettingsPage() {
     const supabase = createClient()
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ first_name: profile.firstName, last_name: profile.lastName, phone: profile.phone || null })
+      .update({
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        phone: profile.phone || null,
+        notification_preferences: notifications,
+      })
       .eq('id', realProfile.id)
 
     let cabinetError = null

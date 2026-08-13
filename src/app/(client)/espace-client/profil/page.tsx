@@ -23,6 +23,8 @@ export default function ClientProfilePage() {
   useEffect(() => {
     if (client) {
       setForm({ name: client.name, email: client.email, phone: client.phone, address: client.address, city: client.city })
+      setNotifyEmail(client.notificationPreferences.email)
+      setNotifySms(client.notificationPreferences.sms)
     }
   }, [client])
 
@@ -34,7 +36,13 @@ export default function ClientProfilePage() {
     const supabase = createClient()
     const { error } = await supabase
       .from('clients')
-      .update({ name: form.name, phone: form.phone || null, address: form.address || null, city: form.city || null })
+      .update({
+        name: form.name,
+        phone: form.phone || null,
+        address: form.address || null,
+        city: form.city || null,
+        notification_preferences: { email: notifyEmail, sms: notifySms },
+      })
       .eq('id', client.id)
     setSaving(false)
     if (error) {
