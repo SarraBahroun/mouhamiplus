@@ -1,4 +1,14 @@
-export type CaseStatus = 'open' | 'pending' | 'closed'
+export type CaseStatus =
+  | 'opened'
+  | 'amicable'
+  | 'filed'
+  | 'instruction'
+  | 'pleading'
+  | 'first_instance_judgment'
+  | 'appeal'
+  | 'cassation'
+  | 'execution'
+  | 'closed'
 
 export interface CaseDocument {
   id: number
@@ -56,10 +66,21 @@ export interface Case {
   messages: CaseMessage[]
 }
 
+// Étapes procédurales inspirées de la hiérarchie judiciaire tunisienne
+// (Tribunal de première instance → Cour d'appel → Cour de cassation). Le
+// personnel peut sauter des étapes (ex. passer directement de "Ouverture" à
+// "Clôturé" pour un dossier de conseil qui ne va jamais en justice).
 export const CASE_STATUS_META: Record<CaseStatus, { label: string; color: string; bg: string }> = {
-  open: { label: 'En cours', color: '#2E7D32', bg: 'rgba(46,125,50,0.08)' },
-  pending: { label: 'En attente', color: '#E65100', bg: 'rgba(230,81,0,0.08)' },
-  closed: { label: 'Clôturé', color: '#37474F', bg: 'rgba(55,71,79,0.08)' },
+  opened: { label: 'Ouverture du dossier', color: '#546E7A', bg: 'rgba(84,110,122,0.08)' },
+  amicable: { label: 'Phase amiable', color: '#E65100', bg: 'rgba(230,81,0,0.08)' },
+  filed: { label: 'Instance introduite', color: '#1565C0', bg: 'rgba(21,101,192,0.08)' },
+  instruction: { label: 'Instruction / mise en état', color: '#00838F', bg: 'rgba(0,131,143,0.08)' },
+  pleading: { label: 'Plaidoirie', color: '#3949AB', bg: 'rgba(57,73,171,0.08)' },
+  first_instance_judgment: { label: 'Jugement rendu (1ère instance)', color: '#2E7D32', bg: 'rgba(46,125,50,0.08)' },
+  appeal: { label: 'Appel', color: '#6A1B9A', bg: 'rgba(106,27,154,0.08)' },
+  cassation: { label: 'Cassation', color: '#AD1457', bg: 'rgba(173,20,87,0.08)' },
+  execution: { label: 'Exécution', color: '#BF360C', bg: 'rgba(191,54,12,0.08)' },
+  closed: { label: 'Clôturé / Archivé', color: '#37474F', bg: 'rgba(55,71,79,0.08)' },
 }
 
 export const initialCases: Case[] = [
@@ -68,7 +89,7 @@ export const initialCases: Case[] = [
     reference: '2023-041',
     title: 'Affaire Bensalem c/ Société TechTun',
     clientId: 1,
-    status: 'open',
+    status: 'instruction',
     practiceArea: 'Droit des affaires',
     assignedTo: 'Yassine Karray',
     openedAt: '2023-04-02',
@@ -101,7 +122,7 @@ export const initialCases: Case[] = [
     reference: '2023-041-S',
     title: 'Dossier succession Mrad',
     clientId: 3,
-    status: 'open',
+    status: 'instruction',
     practiceArea: 'Droit de la famille',
     assignedTo: 'Me. Amine Trabelsi',
     openedAt: '2023-05-11',
@@ -123,7 +144,7 @@ export const initialCases: Case[] = [
     reference: '2024-118',
     title: 'Litige immobilier Gharbi',
     clientId: 4,
-    status: 'pending',
+    status: 'amicable',
     practiceArea: 'Droit immobilier',
     assignedTo: 'Salma Ben Fredj',
     openedAt: '2024-01-20',
@@ -164,7 +185,7 @@ export const initialCases: Case[] = [
     reference: '2024-032',
     title: 'Arbitrage Compagnie Assur+',
     clientId: 6,
-    status: 'open',
+    status: 'instruction',
     practiceArea: 'Droit des assurances',
     assignedTo: 'Me. Sonia Ben Romdhane',
     openedAt: '2024-02-14',
@@ -187,7 +208,7 @@ export const initialCases: Case[] = [
     reference: '2024-118-P',
     title: 'Dossier pénal Ben Ali',
     clientId: 1,
-    status: 'open',
+    status: 'instruction',
     practiceArea: 'Droit pénal',
     assignedTo: 'Me. Karim Mansour',
     openedAt: '2024-03-01',

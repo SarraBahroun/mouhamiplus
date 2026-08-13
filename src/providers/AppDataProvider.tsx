@@ -606,7 +606,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         reference,
         title: input.title,
         client_id: input.clientId,
-        status: 'open',
+        status: 'opened',
         practice_area: input.practiceArea,
         assigned_to: input.assignedTo || null,
       })

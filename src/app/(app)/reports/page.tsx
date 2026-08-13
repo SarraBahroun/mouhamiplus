@@ -1,6 +1,6 @@
 'use client'
 
-import { CASE_STATUS_META, CaseStatus } from '@/lib/cases-data'
+import { CASE_STATUS_META } from '@/lib/cases-data'
 import { INVOICE_STATUS_META, InvoiceStatus } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
 
@@ -33,12 +33,14 @@ function BarChart({ data, unit }: { data: { key: string; label: string; color: s
 
 export default function ReportsPage() {
   const { cases, invoices } = useAppData()
-  const caseCounts = (['open', 'pending', 'closed'] as CaseStatus[]).map((s) => ({
-    key: s,
-    label: CASE_STATUS_META[s].label,
-    color: CASE_STATUS_META[s].color,
-    value: cases.filter((c) => c.status === s).length,
-  }))
+  const caseCounts = (Object.keys(CASE_STATUS_META) as (keyof typeof CASE_STATUS_META)[])
+    .map((s) => ({
+      key: s,
+      label: CASE_STATUS_META[s].label,
+      color: CASE_STATUS_META[s].color,
+      value: cases.filter((c) => c.status === s).length,
+    }))
+    .filter((row) => row.value > 0)
   const invoiceAmounts = (['paid', 'pending', 'overdue'] as InvoiceStatus[]).map((s) => ({
     key: s,
     label: INVOICE_STATUS_META[s].label,
@@ -74,7 +76,11 @@ export default function ReportsPage() {
 
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>Dossiers par statut</h2>
-          <BarChart data={caseCounts} />
+          {caseCounts.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>Aucun dossier.</p>
+          ) : (
+            <BarChart data={caseCounts} />
+          )}
         </div>
 
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>

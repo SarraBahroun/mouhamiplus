@@ -7,7 +7,7 @@ import { CaseStatus, CASE_STATUS_META } from '@/lib/cases-data'
 import { useAppData, Case } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
 
-const STATUSES: CaseStatus[] = ['open', 'pending', 'closed']
+const STATUSES = Object.keys(CASE_STATUS_META) as CaseStatus[]
 
 function KanbanBoard({
   cases,
@@ -23,7 +23,7 @@ function KanbanBoard({
   const [dragOverStatus, setDragOverStatus] = useState<CaseStatus | null>(null)
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ alignItems: 'start' }}>
+    <div className="flex gap-3" style={{ alignItems: 'start', overflowX: 'auto', paddingBottom: 8 }}>
       {STATUSES.map((status) => {
         const meta = CASE_STATUS_META[status]
         const columnCases = cases.filter((c) => c.status === status)
@@ -44,14 +44,16 @@ function KanbanBoard({
               borderRadius: 6,
               padding: 10,
               minHeight: 120,
+              width: 240,
+              flexShrink: 0,
               transition: 'background 0.12s, border-color 0.12s',
             }}
           >
-            <div className="flex items-center justify-between" style={{ padding: '2px 4px 10px' }}>
-              <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>
+            <div className="flex items-start justify-between gap-2" style={{ padding: '2px 4px 10px' }}>
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color, lineHeight: 1.4 }}>
                 {meta.label}
               </span>
-              <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{columnCases.length}</span>
+              <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)', flexShrink: 0, marginTop: 2 }}>{columnCases.length}</span>
             </div>
             <div className="flex flex-col gap-2">
               {columnCases.map((c) => {
@@ -115,14 +117,14 @@ export default function CasesPage() {
     return matchSearch && matchStatus
   })
 
-  const openCount = initialCases.filter((c) => c.status === 'open').length
-  const pendingCount = initialCases.filter((c) => c.status === 'pending').length
+  const activeCount = initialCases.filter((c) => c.status !== 'closed').length
   const closedCount = initialCases.filter((c) => c.status === 'closed').length
+  const appealOrAboveCount = initialCases.filter((c) => c.status === 'appeal' || c.status === 'cassation').length
 
   const stats = [
     { label: 'Dossiers au total', value: String(initialCases.length), sub: 'Tous statuts confondus', icon: '📁' },
-    { label: CASE_STATUS_META.open.label, value: String(openCount), sub: 'dossiers actifs', icon: '⚖️' },
-    { label: CASE_STATUS_META.pending.label, value: String(pendingCount), sub: 'en cours de traitement', icon: '⏳' },
+    { label: 'Dossiers actifs', value: String(activeCount), sub: 'hors clôturés', icon: '⚖️' },
+    { label: 'En appel / cassation', value: String(appealOrAboveCount), sub: 'voies de recours', icon: '📜' },
     { label: CASE_STATUS_META.closed.label, value: String(closedCount), sub: 'dossiers archivés', icon: '✅' },
   ]
 
@@ -194,29 +196,16 @@ export default function CasesPage() {
               }}
             />
           </div>
-          <div className="flex gap-1" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
-            {(['all', 'open', 'pending', 'closed'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                style={{
-                  padding: '5px 10px',
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  border: 'none',
-                  borderRadius: 3,
-                  cursor: 'pointer',
-                  background: statusFilter === s ? 'var(--color-card)' : 'transparent',
-                  color: statusFilter === s ? 'var(--color-foreground)' : 'var(--color-muted-foreground)',
-                  fontWeight: statusFilter === s ? 600 : 400,
-                  boxShadow: statusFilter === s ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all 0.12s',
-                }}
-              >
-                {s === 'all' ? 'Tous' : CASE_STATUS_META[s].label}
-              </button>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as CaseStatus | 'all')}
+            style={{ padding: '7px 10px', fontSize: 12, fontFamily: 'var(--font-mono)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-card)', color: 'var(--color-foreground)', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value="all">Tous les statuts</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{CASE_STATUS_META[s].label}</option>
             ))}
-          </div>
+          </select>
           <div className="flex gap-1" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
             {([{ id: 'list', label: '☰ Liste' }, { id: 'board', label: '▦ Tableau' }] as const).map((v) => (
               <button
