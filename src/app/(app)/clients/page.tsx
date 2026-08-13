@@ -190,7 +190,7 @@ export default function ClientsPage() {
                 {TYPE_LABEL[c.type]}
               </span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: 'var(--color-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>
+                <div style={{ fontSize: 13, color: 'var(--color-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email || '—'}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{c.phone}</div>
               </div>
               <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>

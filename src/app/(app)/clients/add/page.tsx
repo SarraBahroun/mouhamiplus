@@ -17,13 +17,12 @@ export default function ClientAddPage() {
   const { addClient, refresh } = useAppData()
   const [form, setForm] = useState({ name: '', type: 'individual', email: '', phone: '', address: '', city: '' })
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({})
+  const [errors, setErrors] = useState<{ name?: string }>({})
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
 
   const submit = async () => {
     const nextErrors: typeof errors = {}
     if (!form.name.trim()) nextErrors.name = 'Le nom est obligatoire.'
-    if (!form.email.trim()) nextErrors.email = "L'email est obligatoire pour créer l'accès à l'espace client."
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
@@ -40,11 +39,12 @@ export default function ClientAddPage() {
       showToast(`Client ajouté, mais l'accès n'a pas pu être créé : ${invite.error}`)
     } else {
       await refresh()
-      showToast(
-        invite.emailed
-          ? 'Client ajouté — identifiants envoyés par email'
-          : `Client ajouté — mot de passe temporaire : ${invite.tempPassword}`
-      )
+      if (invite.loginId) {
+        sessionStorage.setItem(`mouhamiplus-client-access-${id}`, JSON.stringify({ loginId: invite.loginId, tempPassword: invite.tempPassword }))
+        showToast('Client ajouté — identifiant de connexion généré (voir la fiche)')
+      } else {
+        showToast('Client ajouté — identifiants envoyés par email')
+      }
     }
     setLoading(false)
     router.push(`/clients/${id}`)
@@ -69,13 +69,12 @@ export default function ClientAddPage() {
           />
           <Input label="Nom complet / Raison sociale" value={form.name} onChange={f('name')} placeholder="Ahmed Ben Salah" error={errors.name} />
           <Input
-            label="Adresse e-mail"
+            label="Adresse e-mail (optionnel)"
             type="email"
             value={form.email}
             onChange={f('email')}
             placeholder="client@email.tn"
-            error={errors.email}
-            hint={errors.email ? undefined : "Utilisée pour créer automatiquement l'accès à l'espace client."}
+            hint="Si laissée vide, un identifiant de connexion sera généré automatiquement — à transmettre au client avec le mot de passe."
           />
           <Input label="Téléphone" type="tel" value={form.phone} onChange={f('phone')} placeholder="+216 XX XXX XXX" />
           <Input label="Adresse" value={form.address} onChange={f('address')} placeholder="12 Rue de Marseille" />

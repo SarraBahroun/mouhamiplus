@@ -316,7 +316,7 @@ function mapClient(row: Record<string, unknown>): Client {
     id: row.id as string,
     name: row.name as string,
     type: row.type as ClientType,
-    email: row.email as string,
+    email: (row.email as string) ?? '',
     phone: (row.phone as string) ?? '',
     address: (row.address as string) ?? '',
     city: (row.city as string) ?? '',
@@ -585,7 +585,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('clients')
-      .insert({ cabinet_id: cabinetIdRef.current, name: input.name, type: input.type, email: input.email, phone: input.phone, address: input.address, city: input.city })
+      .insert({ cabinet_id: cabinetIdRef.current, name: input.name, type: input.type, email: input.email || null, phone: input.phone, address: input.address, city: input.city })
       .select()
       .single()
     if (error || !data) return null

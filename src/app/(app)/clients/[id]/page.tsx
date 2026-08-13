@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter, notFound } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
@@ -22,6 +22,20 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const client = clients.find((c) => c.id === id)
   const [tab, setTab] = useState<'info' | 'cases' | 'history' | 'documents' | 'payments' | 'appointments'>('info')
   const [inviting, setInviting] = useState(false)
+  const [revealedAccess, setRevealedAccess] = useState<{ loginId?: string; tempPassword: string } | null>(null)
+
+  useEffect(() => {
+    const key = `mouhamiplus-client-access-${id}`
+    const stored = sessionStorage.getItem(key)
+    if (stored) {
+      try {
+        setRevealedAccess(JSON.parse(stored))
+      } catch {
+        // ignore malformed entry
+      }
+      sessionStorage.removeItem(key)
+    }
+  }, [id])
 
   if (loading) return null
   if (!client) notFound()
@@ -34,11 +48,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       showToast(result.error)
       return
     }
-    showToast(
-      result.emailed
-        ? 'Accès créé — identifiants envoyés au client par email'
-        : `Accès créé, mais l'email n'a pas pu être envoyé — mot de passe temporaire : ${result.tempPassword}`
-    )
+    if (result.loginId) {
+      setRevealedAccess({ loginId: result.loginId, tempPassword: result.tempPassword })
+    } else {
+      showToast('Accès créé — identifiants envoyés au client par email')
+    }
     await refresh()
   }
 
@@ -92,7 +106,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               </span>
             </div>
             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{client.email}</span>
+              <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{client.email || '—'}</span>
               <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{client.phone}</span>
               <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{client.address}, {client.city}</span>
             </div>
@@ -106,6 +120,22 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
         </div>
+
+        {/* Identifiants générés — pas d'email pour les envoyer automatiquement, à transmettre à la main */}
+        {revealedAccess && (
+          <div style={{ padding: '14px 16px', border: '1px solid var(--color-primary)', borderRadius: 6, background: 'rgba(22, 35, 63,0.04)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>
+              Accès créé — à transmettre au client (ne sera plus affiché après fermeture)
+            </p>
+            {revealedAccess.loginId && (
+              <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Identifiant : <strong>{revealedAccess.loginId}</strong></div>
+            )}
+            <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Mot de passe : <strong>{revealedAccess.tempPassword}</strong></div>
+            <div>
+              <Btn variant="secondary" onClick={() => setRevealedAccess(null)}>J&apos;ai noté les informations</Btn>
+            </div>
+          </div>
+        )}
 
         {/* Accès espace client */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-card)' }}>
@@ -152,7 +182,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Informations générales</h3>
               {[
                 { label: 'Type', value: client.type === 'company' ? 'Entreprise' : 'Particulier' },
-                { label: 'Email', value: client.email },
+                { label: 'Email', value: client.email || '—' },
                 { label: 'Téléphone', value: client.phone },
                 { label: 'Adresse', value: `${client.address}, ${client.city}` },
                 { label: 'Client depuis', value: new Date(client.createdAt).toLocaleDateString('fr-FR') },

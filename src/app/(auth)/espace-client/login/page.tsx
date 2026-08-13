@@ -56,7 +56,15 @@ export default function ClientLoginPage() {
         <Divider />
 
         <div className="flex flex-col gap-4">
-          <Input label="Adresse e-mail" type="email" value={email} onChange={setEmail} placeholder="vous@email.tn" error={!email && error ? error : ''} />
+          <Input
+            label="Identifiant"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="vous@email.tn"
+            error={!email && error ? error : ''}
+            hint="Votre adresse e-mail, ou l'identifiant fourni par votre cabinet."
+          />
           <Input label="Mot de passe" type="password" value={pass} onChange={setPass} error={error && (!pass || (email && pass)) ? error : ''} />
         </div>
 
