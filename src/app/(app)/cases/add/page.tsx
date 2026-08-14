@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { SelectInput } from '@/components/ui/SelectInput'
+import { SearchSelect } from '@/components/ui/SearchSelect'
 import { Btn } from '@/components/ui/Btn'
 import { SPECIALITIES } from '@/lib/members-data'
 import { useToast } from '@/providers/ToastProvider'
@@ -40,17 +41,19 @@ export default function CaseAddPage() {
           </div>
 
           <Input label="Intitulé du dossier" value={form.title} onChange={f('title')} placeholder="Affaire X c/ Y" />
-          <SelectInput
+          <SearchSelect
             label="Client"
             value={form.clientId}
             onChange={f('clientId')}
-            options={[{ value: '', label: '— Sélectionner un client —' }, ...clients.map((c) => ({ value: String(c.id), label: c.name }))]}
+            options={clients.map((c) => ({ value: String(c.id), label: c.name }))}
+            placeholder="Rechercher un client"
           />
-          <SelectInput
+          <SearchSelect
             label="Domaine juridique"
             value={form.practiceArea}
             onChange={f('practiceArea')}
-            options={[{ value: '', label: '— Sélectionner un domaine —' }, ...SPECIALITIES.map((s) => ({ value: s, label: s }))]}
+            options={SPECIALITIES.map((s) => ({ value: s, label: s }))}
+            placeholder="Rechercher un domaine"
           />
           <SelectInput
             label="Avocat assigné"

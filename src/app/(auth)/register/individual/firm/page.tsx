@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { SearchSelect } from '@/components/ui/SearchSelect'
 import { Btn } from '@/components/ui/Btn'
+import { TUNISIA_CITIES } from '@/lib/tunisia-cities'
+import { isValidTunisianPhone } from '@/lib/validation'
 import { REGISTER_INDIVIDUAL_STORAGE_KEY } from '../storageKey'
+
+const CITY_OPTIONS = TUNISIA_CITIES.map((c) => ({ value: c, label: c }))
 
 export default function RegisterIndividualFirmPage() {
   const router = useRouter()
   const [form, setForm] = useState({ firmName: '', address: '', city: '', firmPhone: '' })
+  const [phoneError, setPhoneError] = useState('')
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
 
   useEffect(() => {
@@ -20,6 +26,11 @@ export default function RegisterIndividualFirmPage() {
   }, [router])
 
   const submit = () => {
+    if (form.firmPhone && !isValidTunisianPhone(form.firmPhone)) {
+      setPhoneError('Numéro de téléphone invalide (format tunisien attendu, ex. +216 XX XXX XXX).')
+      return
+    }
+    setPhoneError('')
     const raw = sessionStorage.getItem(REGISTER_INDIVIDUAL_STORAGE_KEY)
     if (!raw) {
       router.replace('/register/individual')
@@ -43,8 +54,16 @@ export default function RegisterIndividualFirmPage() {
         <Input label="Nom du cabinet" value={form.firmName} onChange={f('firmName')} placeholder="Cabinet Me. Trabelsi" hint="Ou votre nom si vous exercez sans enseigne" />
         <Input label="Adresse" value={form.address} onChange={f('address')} placeholder="12 Avenue Habib Bourguiba" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input label="Ville" value={form.city} onChange={f('city')} placeholder="Tunis" />
-          <Input label="Téléphone du cabinet" type="tel" value={form.firmPhone} onChange={f('firmPhone')} placeholder="+216 XX XXX XXX" hint="optionnel" />
+          <SearchSelect label="Ville" value={form.city} onChange={f('city')} options={CITY_OPTIONS} placeholder="Rechercher une ville" />
+          <Input
+            label="Téléphone du cabinet"
+            type="tel"
+            value={form.firmPhone}
+            onChange={f('firmPhone')}
+            placeholder="+216 XX XXX XXX"
+            hint={phoneError ? undefined : 'optionnel'}
+            error={phoneError}
+          />
         </div>
 
         <div className="flex flex-col gap-2">

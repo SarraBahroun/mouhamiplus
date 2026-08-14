@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { Btn } from '@/components/ui/Btn'
 import { useLang } from '@/providers/LangProvider'
+import { isValidTunisianPhone } from '@/lib/validation'
 import { REGISTER_INDIVIDUAL_STORAGE_KEY } from './storageKey'
 
 export default function RegisterIndividualPage() {
@@ -18,12 +19,18 @@ export default function RegisterIndividualPage() {
   })
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
   const [error, setError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
 
   const submit = () => {
     if (!form.firstName || !form.lastName || !form.email || !form.password) {
       setError('Merci de remplir tous les champs obligatoires.')
       return
     }
+    if (form.phone && !isValidTunisianPhone(form.phone)) {
+      setPhoneError('Numéro de téléphone invalide (format tunisien attendu, ex. +216 XX XXX XXX).')
+      return
+    }
+    setPhoneError('')
     if (form.confirm !== form.password) {
       setError('Les mots de passe ne correspondent pas.')
       return
@@ -60,7 +67,15 @@ export default function RegisterIndividualPage() {
         </div>
 
         <Input label={tr.email} type="email" value={form.email} onChange={f('email')} placeholder="nom@barreau.tn" />
-        <Input label={tr.phone} type="tel" value={form.phone} onChange={f('phone')} placeholder="+216 XX XXX XXX" hint="Utilisé pour la vérification 2FA" />
+        <Input
+          label={tr.phone}
+          type="tel"
+          value={form.phone}
+          onChange={f('phone')}
+          placeholder="+216 XX XXX XXX"
+          hint={phoneError ? undefined : 'Utilisé pour la vérification 2FA'}
+          error={phoneError}
+        />
 
         <Divider text="BARREAU" />
 
