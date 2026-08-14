@@ -1,13 +1,17 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Btn } from '@/components/ui/Btn'
 import { useLang } from '@/providers/LangProvider'
 
-export default function ResetSentPage() {
+function ResetSentScreen() {
   const router = useRouter()
   const { tr } = useLang()
+  const params = useSearchParams()
+  const email = params.get('email') || ''
+
   return (
     <Card style={{ maxWidth: 400 }}>
       <div className="flex flex-col gap-6 items-center text-center">
@@ -32,18 +36,24 @@ export default function ResetSentPage() {
             {tr.reset_sent_title}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            {tr.reset_sent_sub} <strong style={{ color: 'var(--color-foreground)' }}>a.trabelsi@barreau-tunis.tn</strong>
+            {tr.reset_sent_sub}
+            {email && <> <strong style={{ color: 'var(--color-foreground)' }}>{email}</strong></>}
           </p>
         </div>
-        <div className="flex flex-col gap-2 w-full">
-          <Btn fullWidth onClick={() => router.push('/reset-password/new')}>Ouvrir le lien de réinitialisation</Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/login')}>Retour à la connexion</Btn>
-        </div>
+        <Btn fullWidth variant="ghost" onClick={() => router.push('/login')}>{tr.back}</Btn>
         <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>
           Vérifiez aussi votre dossier spam. Le lien expire dans{' '}
           <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>30 min</span>.
         </p>
       </div>
     </Card>
+  )
+}
+
+export default function ResetSentPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetSentScreen />
+    </Suspense>
   )
 }
