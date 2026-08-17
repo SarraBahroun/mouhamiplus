@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Btn } from '@/components/ui/Btn'
+import { askLegalAssistant } from './actions'
 
 interface ChatMessage {
   id: number
@@ -58,12 +59,18 @@ function getReply(question: string): string {
 export default function AiAssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL)
   const [draft, setDraft] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const ask = (question: string) => {
-    if (!question.trim()) return
+  const ask = async (question: string) => {
+    if (!question.trim() || loading) return
     const nextId = messages[messages.length - 1].id + 1
-    setMessages((m) => [...m, { id: nextId, from: 'user', text: question }, { id: nextId + 1, from: 'ai', text: getReply(question) }])
+    setMessages((m) => [...m, { id: nextId, from: 'user', text: question }])
     setDraft('')
+    setLoading(true)
+    const result = await askLegalAssistant(question)
+    const reply = 'reply' in result ? result.reply : getReply(question)
+    setMessages((m) => [...m, { id: nextId + 1, from: 'ai', text: reply }])
+    setLoading(false)
   }
 
   return (
@@ -133,6 +140,22 @@ export default function AiAssistantPage() {
               {m.text}
             </div>
           ))}
+          {loading && (
+            <div
+              style={{
+                alignSelf: 'flex-start',
+                maxWidth: '80%',
+                padding: '10px 13px',
+                borderRadius: 10,
+                fontSize: 13,
+                fontStyle: 'italic',
+                color: 'var(--color-muted-foreground)',
+                background: 'var(--color-secondary)',
+              }}
+            >
+              L&apos;assistant réfléchit…
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -141,6 +164,7 @@ export default function AiAssistantPage() {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && ask(draft)}
             placeholder="Posez votre question…"
+            disabled={loading}
             style={{
               flex: 1,
               padding: '11px 14px',
@@ -153,7 +177,7 @@ export default function AiAssistantPage() {
               color: 'var(--color-foreground)',
             }}
           />
-          <Btn onClick={() => ask(draft)}>Envoyer</Btn>
+          <Btn onClick={() => ask(draft)} disabled={loading}>Envoyer</Btn>
         </div>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { Btn } from '@/components/ui/Btn'
 import { useAppData } from '@/providers/AppDataProvider'
+import { CASE_STATUS_META } from '@/lib/cases-data'
+import { generateLegalDocument } from './actions'
 
 const TEMPLATES = [
   { value: 'mise-en-demeure', label: 'Mise en demeure' },
@@ -21,10 +23,29 @@ Par la présente, nous vous mettons en demeure de bien vouloir procéder, dans u
 Veuillez agréer, Maître, l'expression de nos salutations distinguées.`
 
 export default function AiGeneratePage() {
-  const { cases: initialCases } = useAppData()
+  const { cases: initialCases, clients } = useAppData()
   const [template, setTemplate] = useState('mise-en-demeure')
   const [caseId, setCaseId] = useState(String(initialCases[0]?.id ?? ''))
   const [generated, setGenerated] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [output, setOutput] = useState(SAMPLE_OUTPUT)
+
+  const handleGenerate = async () => {
+    const c = initialCases.find((x) => String(x.id) === caseId)
+    if (!c) return
+    setLoading(true)
+    const result = await generateLegalDocument({
+      templateId: template,
+      caseReference: c.reference,
+      caseTitle: c.title,
+      practiceArea: c.practiceArea,
+      statusLabel: CASE_STATUS_META[c.status]?.label ?? c.status,
+      clientName: clients.find((cl) => cl.id === c.clientId)?.name,
+    })
+    setOutput('text' in result ? result.text : SAMPLE_OUTPUT)
+    setGenerated(true)
+    setLoading(false)
+  }
 
   return (
     <div>
@@ -48,7 +69,7 @@ export default function AiGeneratePage() {
                 onChange={setCaseId}
                 options={initialCases.map((c) => ({ value: String(c.id), label: c.title }))}
               />
-              <Btn fullWidth onClick={() => setGenerated(true)}>✨ Générer le document</Btn>
+              <Btn fullWidth onClick={handleGenerate} disabled={loading}>{loading ? 'Génération…' : '✨ Générer le document'}</Btn>
             </div>
           </div>
 
@@ -57,7 +78,7 @@ export default function AiGeneratePage() {
               APERÇU
             </h2>
             {generated ? (
-              <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--color-foreground)', whiteSpace: 'pre-wrap' }}>{SAMPLE_OUTPUT}</p>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--color-foreground)', whiteSpace: 'pre-wrap' }}>{output}</p>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>
                 Le document généré apparaîtra ici.

@@ -4,27 +4,38 @@ import { useState } from 'react'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { Btn } from '@/components/ui/Btn'
 import { useAppData } from '@/providers/AppDataProvider'
+import { CASE_STATUS_META } from '@/lib/cases-data'
+import { summarizeCase } from './actions'
 
-const SUMMARIES: Record<number, string[]> = {
-  1: [
-    'Litige commercial opposant Karim Bensalem à la Société TechTun, ouvert le 02/04/2023.',
-    'Le contrat initial de 2021 est au cœur du différend ; les échanges de courriels montrent un désaccord sur l\'exécution des obligations contractuelles.',
-    'Une audience de plaidoirie est fixée au 18/06/2024. Les conclusions en réplique doivent être déposées avant cette date.',
-  ],
-  3: [
-    'Litige immobilier concernant Fedoua Gharbi, portant sur un titre foncier à Sousse.',
-    'Dossier actuellement en attente ; une vérification du cadastre est requise avant la première audience du 25/06/2024.',
-  ],
-}
+const FALLBACK_SUMMARY = ["Ce dossier ne contient pas encore assez d'éléments pour générer un résumé détaillé."]
 
 export default function AiSummaryPage() {
-  const { cases: initialCases } = useAppData()
+  const { cases: initialCases, clients } = useAppData()
   const [caseId, setCaseId] = useState(String(initialCases[0]?.id ?? ''))
   const [shown, setShown] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [summary, setSummary] = useState<string[]>(FALLBACK_SUMMARY)
 
-  const summary = SUMMARIES[Number(caseId)] ?? [
-    'Ce dossier ne contient pas encore assez d\'éléments pour générer un résumé détaillé.',
-  ]
+  const handleSummarize = async () => {
+    const c = initialCases.find((x) => String(x.id) === caseId)
+    if (!c) return
+    setLoading(true)
+    const result = await summarizeCase({
+      reference: c.reference,
+      title: c.title,
+      statusLabel: CASE_STATUS_META[c.status]?.label ?? c.status,
+      practiceArea: c.practiceArea,
+      openedAt: c.openedAt,
+      nextHearing: c.nextHearing,
+      clientName: clients.find((cl) => cl.id === c.clientId)?.name,
+      notes: c.notes.map((n) => n.text),
+      messages: c.messages.map((m) => m.text),
+      hearings: c.hearings.map((h) => `${h.date} - ${h.court}${h.note ? ` (${h.note})` : ''}`),
+    })
+    setSummary('lines' in result ? result.lines : FALLBACK_SUMMARY)
+    setShown(true)
+    setLoading(false)
+  }
 
   return (
     <div>
@@ -48,7 +59,7 @@ export default function AiSummaryPage() {
                 options={initialCases.map((c) => ({ value: String(c.id), label: c.title }))}
               />
             </div>
-            <Btn onClick={() => setShown(true)}>✨ Résumer</Btn>
+            <Btn onClick={handleSummarize} disabled={loading}>{loading ? 'Résumé…' : '✨ Résumer'}</Btn>
           </div>
         </div>
 
