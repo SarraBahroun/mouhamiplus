@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
@@ -10,6 +10,8 @@ import { StatusDot } from '@/components/members/StatusDot'
 import { ROLE_META, ACTION_COLORS } from '@/lib/members-data'
 import { PERMISSION_DEFS, ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useToast } from '@/providers/ToastProvider'
+import { resetMemberPassword } from '../actions'
 
 const EDIT_TARGET: Record<string, string> = {
   secretary: '/members/add/secretary',
@@ -28,15 +30,42 @@ const ACTION_ICONS: Record<string, string> = {
 export default function MemberProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { showToast } = useToast()
   const { members, cases, auditLog, toggleMemberStatus, memberPermissionOverrides, loading } = useAppData()
   const member = members.find((m) => m.id === id)
   const assignedCases = cases.filter((c) => c.assignedTo === id)
   const memberActivity = auditLog.filter((e) => e.actorId === id).slice(0, 15)
   const supervisor = member?.supervisorId ? members.find((m) => m.id === member.supervisorId) : null
   const [tab, setTab] = useState<'info' | 'cases' | 'activity' | 'permissions'>('info')
+  const [resetting, setResetting] = useState(false)
+  const [revealedAccess, setRevealedAccess] = useState<{ tempPassword: string; emailed?: boolean } | null>(null)
+
+  useEffect(() => {
+    const key = `mouhamiplus-member-access-${id}`
+    const stored = sessionStorage.getItem(key)
+    if (stored) {
+      try {
+        setRevealedAccess(JSON.parse(stored))
+      } catch {
+        // ignore malformed entry
+      }
+      sessionStorage.removeItem(key)
+    }
+  }, [id])
 
   if (loading) return null
   if (!member) notFound()
+
+  const resetPassword = async () => {
+    setResetting(true)
+    const result = await resetMemberPassword(member.id)
+    setResetting(false)
+    if ('error' in result) {
+      showToast(result.error)
+      return
+    }
+    setRevealedAccess({ tempPassword: result.tempPassword, emailed: result.emailed })
+  }
 
   const effectivePermissions = memberPermissionOverrides[member.id] ?? ROLE_DEFAULT_PERMISSIONS[member.role]
   const isCustomized = Boolean(memberPermissionOverrides[member.id])
@@ -97,6 +126,20 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
           <StatusDot status={member.status} />
         </div>
 
+        {/* Identifiants générés — toujours affichés ici, même si un email a aussi été envoyé */}
+        {revealedAccess && (
+          <div style={{ padding: '14px 16px', border: '1px solid var(--color-primary)', borderRadius: 6, background: 'rgba(22, 35, 63,0.04)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>
+              {revealedAccess.emailed ? 'Mot de passe réinitialisé — également envoyé par email' : 'Mot de passe généré — à transmettre au membre'}
+              {' '}(ne sera plus affiché après fermeture)
+            </p>
+            <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Mot de passe : <strong>{revealedAccess.tempPassword}</strong></div>
+            <div>
+              <Btn variant="secondary" onClick={() => setRevealedAccess(null)}>J&apos;ai noté l&apos;information</Btn>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex gap-2 flex-wrap">
           {EDIT_TARGET[member.role] && (
@@ -105,7 +148,9 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
           <Btn variant="secondary" onClick={() => toggleMemberStatus(member.id)}>
             {member.status === 'active' ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte'}
           </Btn>
-          <Btn variant="secondary" onClick={() => router.push('/reset-password')}>🔑 Réinitialiser mot de passe</Btn>
+          <Btn variant="secondary" onClick={resetPassword} disabled={resetting}>
+            {resetting ? '…' : '🔑 Réinitialiser le mot de passe'}
+          </Btn>
           <Btn variant="secondary" onClick={() => router.push(`/members/${member.id}/permissions`)}>🛡️ Permissions</Btn>
         </div>
 

@@ -33,7 +33,7 @@ export default function MemberPermissionsPage({ params }: { params: Promise<{ id
   const save = async () => {
     await setMemberPermissionOverride(member.id, useDefault ? null : perms)
     showToast('Permissions enregistrées')
-    router.push('/members')
+    router.push(`/members/${member.id}`)
   }
 
   const activeSet = useDefault ? ROLE_DEFAULT_PERMISSIONS[member.role] : perms

@@ -29,7 +29,8 @@ export default function MembersFormCollaboratorPage() {
       setError(result.error)
       return
     }
-    showToast(`Compte créé — mot de passe temporaire : ${result.tempPassword}`)
+    sessionStorage.setItem(`mouhamiplus-member-access-${result.id}`, JSON.stringify({ tempPassword: result.tempPassword }))
+    showToast('Compte créé — mot de passe temporaire disponible sur la fiche du membre')
     router.push(`/members/${result.id}/permissions`)
   }
 
