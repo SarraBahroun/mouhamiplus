@@ -258,6 +258,8 @@ interface AppDataContextValue {
   addCase: (input: NewCaseInput) => Promise<string | null>
   updateCaseStatus: (caseId: string, status: CaseStatus) => Promise<boolean>
   toggleCaseTask: (caseId: string, taskId: string) => Promise<void>
+  addCaseTask: (caseId: string, label: string, dueDate?: string) => Promise<boolean>
+  deleteCaseTask: (caseId: string, taskId: string) => Promise<boolean>
   addCaseDocument: (caseId: string, file: File) => Promise<boolean>
   getDocumentUrl: (storagePath: string) => Promise<string | null>
   addCaseNote: (caseId: string, author: string, text: string) => Promise<void>
@@ -639,6 +641,29 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const addCaseTask = async (caseId: string, label: string, dueDate?: string): Promise<boolean> => {
+    const trimmed = label.trim()
+    if (!trimmed) return false
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('case_tasks')
+      .insert({ case_id: caseId, label: trimmed, due_date: dueDate || null })
+      .select()
+      .single()
+    if (error || !data) return false
+    const task = mapTask(data)
+    setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, tasks: [...c.tasks, task] } : c)))
+    return true
+  }
+
+  const deleteCaseTask = async (caseId: string, taskId: string): Promise<boolean> => {
+    const supabase = createClient()
+    const { error } = await supabase.from('case_tasks').delete().eq('id', taskId)
+    if (error) return false
+    setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, tasks: c.tasks.filter((t) => t.id !== taskId) } : c)))
+    return true
+  }
+
   const addCaseDocument = async (caseId: string, file: File): Promise<boolean> => {
     const supabase = createClient()
     const path = `${caseId}/${crypto.randomUUID()}-${file.name}`
@@ -878,6 +903,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     addCase,
     updateCaseStatus,
     toggleCaseTask,
+    addCaseTask,
+    deleteCaseTask,
     addCaseDocument,
     getDocumentUrl,
     addCaseNote,

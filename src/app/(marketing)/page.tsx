@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Reveal } from '@/components/ui/Reveal'
 import { ScrollTopButton } from '@/components/ui/ScrollTopButton'
+import { createClient } from '@/lib/supabase/server'
 
 function HeroLogo({ size = 40 }: { size?: number }) {
   return (
@@ -135,7 +137,16 @@ function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?:
   )
 }
 
-export default function MarketingHomePage() {
+export default async function MarketingHomePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle()
+    if (profile) redirect('/dashboard')
+    const { data: client } = await supabase.from('clients').select('id').eq('auth_user_id', user.id).maybeSingle()
+    if (client) redirect('/espace-client/dashboard')
+  }
+
   return (
     <div style={{ background: '#FFFCF6' }}>
       {/* Nav + Hero — fond bleu nuit */}
@@ -690,10 +701,18 @@ export default function MarketingHomePage() {
       >
         <HeroLogo size={26} />
         <div className="flex items-center gap-5">
-          {['Conditions', 'Confidentialité', 'Support'].map((item) => (
-            <span key={item} style={{ fontSize: 12, color: 'var(--color-sky-soft)', fontFamily: 'var(--font-mono)' }}>
-              {item}
-            </span>
+          {[
+            { label: 'Conditions', href: '/conditions' },
+            { label: 'Confidentialité', href: '/confidentialite' },
+            { label: 'Support', href: '#contact' },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              style={{ fontSize: 12, color: 'var(--color-sky-soft)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}
+            >
+              {item.label}
+            </a>
           ))}
         </div>
         <span style={{ fontSize: 11, color: 'rgba(169,214,242,0.5)' }}>© 2026 Mouhami+. Tous droits réservés.</span>

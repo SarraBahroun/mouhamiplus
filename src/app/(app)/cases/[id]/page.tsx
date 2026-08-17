@@ -27,7 +27,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
-  const { cases, clients, members, toggleCaseTask, addCaseDocument, getDocumentUrl, addCaseNote, addCaseMessage, addCaseHearing, loading } = useAppData()
+  const { cases, clients, members, toggleCaseTask, addCaseTask, deleteCaseTask, addCaseDocument, getDocumentUrl, addCaseNote, addCaseMessage, addCaseHearing, loading } = useAppData()
   const { currentUserName } = useSession()
   const caseData = cases.find((c) => c.id === id)
   const [tab, setTab] = useState<'info' | 'documents' | 'hearings' | 'notes' | 'tasks' | 'messages'>('info')
@@ -39,6 +39,9 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const [hearingCourt, setHearingCourt] = useState('')
   const [hearingNote, setHearingNote] = useState('')
   const [addingHearing, setAddingHearing] = useState(false)
+  const [taskDraft, setTaskDraft] = useState('')
+  const [taskDueDate, setTaskDueDate] = useState('')
+  const [addingTask, setAddingTask] = useState(false)
 
   if (loading) return null
   if (!caseData) notFound()
@@ -51,6 +54,24 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const meta = CASE_STATUS_META[caseData.status]
 
   const toggleTask = (taskId: string) => toggleCaseTask(caseData.id, taskId)
+
+  const addTask = async () => {
+    if (!taskDraft.trim()) return
+    setAddingTask(true)
+    const ok = await addCaseTask(caseData.id, taskDraft, taskDueDate || undefined)
+    setAddingTask(false)
+    if (!ok) {
+      showToast("Impossible d'ajouter la tâche.")
+      return
+    }
+    setTaskDraft('')
+    setTaskDueDate('')
+  }
+
+  const removeTask = async (taskId: string) => {
+    const ok = await deleteCaseTask(caseData.id, taskId)
+    if (!ok) showToast('Impossible de supprimer la tâche.')
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -312,15 +333,32 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
 
           {tab === 'tasks' && (
             <div className="flex flex-col gap-2">
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Tâches</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 4px' }}>Tâches</h3>
+              <div className="flex gap-2">
+                <input
+                  value={taskDraft}
+                  onChange={(e) => setTaskDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addTask()}
+                  placeholder="Ajouter une tâche…"
+                  style={{ flex: 1, padding: '9px 12px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', fontSize: 14, fontFamily: 'var(--font-body)', background: 'var(--color-card)', outline: 'none', color: 'var(--color-foreground)' }}
+                />
+                <input
+                  type="date"
+                  value={taskDueDate}
+                  onChange={(e) => setTaskDueDate(e.target.value)}
+                  style={{ padding: '9px 12px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', fontSize: 13, fontFamily: 'var(--font-body)', background: 'var(--color-card)', outline: 'none', color: 'var(--color-foreground)' }}
+                />
+                <Btn onClick={addTask} disabled={addingTask}>Ajouter</Btn>
+              </div>
               {tasks.length === 0 ? (
                 <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)' }}>Aucune tâche.</p>
               ) : (
                 tasks.map((t) => (
-                  <div key={t.id} onClick={() => toggleTask(t.id)} style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                  <div key={t.id} style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span
+                      onClick={() => toggleTask(t.id)}
                       style={{
-                        width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                        width: 16, height: 16, borderRadius: 3, flexShrink: 0, cursor: 'pointer',
                         border: `1.5px solid ${t.done ? 'var(--color-primary)' : 'var(--color-border)'}`,
                         background: t.done ? 'var(--color-primary)' : 'transparent',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -332,10 +370,20 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
                         </svg>
                       )}
                     </span>
-                    <span style={{ fontSize: 14, flex: 1, color: 'var(--color-foreground)', textDecoration: t.done ? 'line-through' : 'none', opacity: t.done ? 0.6 : 1 }}>
+                    <span
+                      onClick={() => toggleTask(t.id)}
+                      style={{ fontSize: 14, flex: 1, cursor: 'pointer', color: 'var(--color-foreground)', textDecoration: t.done ? 'line-through' : 'none', opacity: t.done ? 0.6 : 1 }}
+                    >
                       {t.label}
                     </span>
-                    <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>{t.dueDate}</span>
+                    {t.dueDate && <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>{t.dueDate}</span>}
+                    <button
+                      onClick={() => removeTask(t.id)}
+                      aria-label="Supprimer la tâche"
+                      style={{ border: 'none', background: 'transparent', color: 'var(--color-muted-foreground)', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 2 }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))
               )}
