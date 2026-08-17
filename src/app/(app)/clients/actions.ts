@@ -78,3 +78,51 @@ export async function inviteClient(clientId: string): Promise<InviteClientResult
 
   return { tempPassword, emailed: !emailError, loginId: emailError ? loginEmail : undefined }
 }
+
+export type ResetClientPasswordResult = { tempPassword: string; emailed: boolean; loginEmail: string } | { error: string }
+
+export async function resetClientPassword(clientId: string): Promise<ResetClientPasswordResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié.' }
+
+  const { data: allowed } = await supabase.rpc('auth_permission', { perm: 'manageClients' })
+  if (!allowed) return { error: "Vous n'avez pas la permission de gérer les accès clients." }
+
+  const admin = createAdminClient()
+  const { data: clientRow, error: clientError } = await admin
+    .from('clients')
+    .select('id, email, name, auth_user_id')
+    .eq('id', clientId)
+    .single()
+  if (clientError || !clientRow) return { error: 'Client introuvable.' }
+  if (!clientRow.auth_user_id) return { error: "Aucun accès n'a encore été créé pour ce client." }
+
+  const tempPassword = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+  const { data: userData, error: updateError } = await admin.auth.admin.updateUserById(clientRow.auth_user_id, { password: tempPassword })
+  if (updateError || !userData.user) {
+    return { error: updateError?.message ?? 'Impossible de réinitialiser le mot de passe.' }
+  }
+
+  const loginEmail = userData.user.email ?? clientRow.email ?? ''
+  const hasRealEmail = Boolean(clientRow.email)
+
+  if (!hasRealEmail) {
+    return { tempPassword, emailed: false, loginEmail }
+  }
+
+  const { error: emailError } = await sendTransactionalEmail({
+    to: loginEmail,
+    subject: 'Votre mot de passe Mouhami+ a été réinitialisé',
+    html: `<p>Bonjour ${clientRow.name},</p>
+<p>Votre cabinet a réinitialisé le mot de passe de votre espace client Mouhami+.</p>
+<p>Identifiants de connexion :</p>
+<ul>
+  <li>Email : ${loginEmail}</li>
+  <li>Nouveau mot de passe temporaire : <strong>${tempPassword}</strong></li>
+</ul>
+<p>Connectez-vous depuis la page espace client et pensez à changer ce mot de passe.</p>`,
+  })
+
+  return { tempPassword, emailed: !emailError, loginEmail }
+}

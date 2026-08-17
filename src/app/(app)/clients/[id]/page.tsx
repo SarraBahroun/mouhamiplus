@@ -8,7 +8,7 @@ import { CASE_STATUS_META } from '@/lib/cases-data'
 import { INVOICE_STATUS_META, PAYMENT_STATUS_META } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
-import { inviteClient } from '../actions'
+import { inviteClient, resetClientPassword } from '../actions'
 
 function initialsOf(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -22,7 +22,8 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const client = clients.find((c) => c.id === id)
   const [tab, setTab] = useState<'info' | 'cases' | 'history' | 'documents' | 'payments' | 'appointments'>('info')
   const [inviting, setInviting] = useState(false)
-  const [revealedAccess, setRevealedAccess] = useState<{ loginId?: string; tempPassword: string } | null>(null)
+  const [resetting, setResetting] = useState(false)
+  const [revealedAccess, setRevealedAccess] = useState<{ login: string; tempPassword: string; emailed: boolean } | null>(null)
 
   useEffect(() => {
     const key = `mouhamiplus-client-access-${id}`
@@ -48,12 +49,19 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
       showToast(result.error)
       return
     }
-    if (result.loginId) {
-      setRevealedAccess({ loginId: result.loginId, tempPassword: result.tempPassword })
-    } else {
-      showToast('Accès créé — identifiants envoyés au client par email')
-    }
+    setRevealedAccess({ login: result.loginId ?? client.email ?? '', tempPassword: result.tempPassword, emailed: result.emailed })
     await refresh()
+  }
+
+  const resetPassword = async () => {
+    setResetting(true)
+    const result = await resetClientPassword(client.id)
+    setResetting(false)
+    if ('error' in result) {
+      showToast(result.error)
+      return
+    }
+    setRevealedAccess({ login: result.loginEmail, tempPassword: result.tempPassword, emailed: result.emailed })
   }
 
   const cases = allCases.filter((c) => c.clientId === client.id)
@@ -121,15 +129,14 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* Identifiants générés — pas d'email pour les envoyer automatiquement, à transmettre à la main */}
+        {/* Identifiants générés — toujours affichés ici, même si un email a aussi été envoyé */}
         {revealedAccess && (
           <div style={{ padding: '14px 16px', border: '1px solid var(--color-primary)', borderRadius: 6, background: 'rgba(22, 35, 63,0.04)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>
-              Accès créé — à transmettre au client (ne sera plus affiché après fermeture)
+              Accès {revealedAccess.emailed ? 'créé — également envoyé au client par email' : 'créé — à transmettre au client à la main'}
+              {' '}(ne sera plus affiché après fermeture)
             </p>
-            {revealedAccess.loginId && (
-              <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Identifiant : <strong>{revealedAccess.loginId}</strong></div>
-            )}
+            <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Identifiant : <strong>{revealedAccess.login}</strong></div>
             <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>Mot de passe : <strong>{revealedAccess.tempPassword}</strong></div>
             <div>
               <Btn variant="secondary" onClick={() => setRevealedAccess(null)}>J&apos;ai noté les informations</Btn>
@@ -142,7 +149,11 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>
             {client.hasPortalAccess ? '✅ Accès à l\'espace client activé' : "Pas encore d'accès à l'espace client"}
           </span>
-          {!client.hasPortalAccess && (
+          {client.hasPortalAccess ? (
+            <Btn variant="secondary" onClick={resetPassword} disabled={resetting}>
+              {resetting ? '…' : 'Réinitialiser le mot de passe'}
+            </Btn>
+          ) : (
             <Btn variant="secondary" onClick={sendPortalAccess} disabled={inviting}>
               {inviting ? '…' : "Envoyer un accès à l'espace client"}
             </Btn>

@@ -39,12 +39,11 @@ export default function ClientAddPage() {
       showToast(`Client ajouté, mais l'accès n'a pas pu être créé : ${invite.error}`)
     } else {
       await refresh()
-      if (invite.loginId) {
-        sessionStorage.setItem(`mouhamiplus-client-access-${id}`, JSON.stringify({ loginId: invite.loginId, tempPassword: invite.tempPassword }))
-        showToast('Client ajouté — identifiant de connexion généré (voir la fiche)')
-      } else {
-        showToast('Client ajouté — identifiants envoyés par email')
-      }
+      sessionStorage.setItem(
+        `mouhamiplus-client-access-${id}`,
+        JSON.stringify({ login: invite.loginId ?? form.email, tempPassword: invite.tempPassword, emailed: invite.emailed })
+      )
+      showToast(invite.emailed ? 'Client ajouté — identifiants envoyés par email (voir aussi la fiche)' : 'Client ajouté — identifiants générés (voir la fiche)')
     }
     setLoading(false)
     router.push(`/clients/${id}`)
