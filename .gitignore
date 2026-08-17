@@ -46,3 +46,9 @@ next-env.d.ts
 
 # supabase CLI local cache
 supabase/.temp
+
+# claude code local settings
+.claude/settings.local.json
+
+# tesseract.js language data cache (downloaded at runtime, not a project asset)
+*.traineddata
