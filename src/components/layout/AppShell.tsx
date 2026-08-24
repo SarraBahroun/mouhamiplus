@@ -260,29 +260,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{currentUserRoleLabel}</div>
             </div>
           </div>
-          <select
-            value={String(currentUserId)}
-            onChange={(e) => setCurrentUserId(e.target.value)}
-            title="Voir en tant que"
-            style={{
-              width: '100%',
-              marginBottom: 10,
-              padding: '5px 6px',
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 4,
-              background: 'var(--color-secondary)',
-              color: 'var(--color-foreground)',
-              cursor: 'pointer',
-            }}
-          >
-            {viewAsOptions.map((opt) => (
-              <option key={String(opt.id)} value={String(opt.id)}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          {realProfile?.role === 'owner' && (
+            <select
+              value={String(currentUserId)}
+              onChange={(e) => setCurrentUserId(e.target.value)}
+              title="Voir en tant que"
+              style={{
+                width: '100%',
+                marginBottom: 10,
+                padding: '5px 6px',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 4,
+                background: 'var(--color-secondary)',
+                color: 'var(--color-foreground)',
+                cursor: 'pointer',
+              }}
+            >
+              {viewAsOptions.map((opt) => (
+                <option key={String(opt.id)} value={String(opt.id)}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex items-center justify-between">
             <LangSelector lang={lang} setLang={setLang} />
             <button
