@@ -45,12 +45,15 @@ export default function DeadlineRulesPage() {
     }
     setSaving(rule.id)
     const supabase = createClient()
-    const { error } = await supabase
+    // .select() nécessaire pour détecter un blocage RLS silencieux : sans lui, un update
+    // refusé par accessSettings (migration 0013) renvoie quand même 0 erreur.
+    const { data, error } = await supabase
       .from('legal_deadline_rules')
       .update({ days, verified: days !== null, updated_at: new Date().toISOString() })
       .eq('id', rule.id)
+      .select('id')
     setSaving(null)
-    if (error) {
+    if (error || !data || data.length === 0) {
       showToast("Impossible d'enregistrer (vérifiez vos permissions).")
       return
     }

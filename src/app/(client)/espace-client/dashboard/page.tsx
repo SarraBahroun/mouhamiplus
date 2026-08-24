@@ -37,8 +37,10 @@ export default function ClientDashboardPage() {
     { label: 'Montant en attente', value: `${outstanding.toLocaleString('fr-FR')} DT`, sub: `${clientInvoices.length} facture${clientInvoices.length !== 1 ? 's' : ''}`, icon: <IconCreditCard size={20} /> },
   ]
 
+  // Les notes de dossier sont internes au cabinet (RLS ne les expose jamais à un client) —
+  // les messages échangés, eux, sont bien visibles côté client (client_read_own_messages).
   const recentEvents = cases
-    .flatMap((c) => c.notes.map((n) => ({ date: n.date, label: n.text, caseTitle: c.title, caseId: c.id })))
+    .flatMap((c) => c.messages.map((m) => ({ date: m.date, label: m.text, caseTitle: c.title, caseId: c.id })))
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 4)
 

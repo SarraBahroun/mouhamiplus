@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { Card } from '@/components/ui/Card'
+import { Btn } from '@/components/ui/Btn'
 import { createClient } from '@/lib/supabase/client'
 
 function AuthCallbackScreen() {
@@ -30,7 +31,7 @@ function AuthCallbackScreen() {
       if (tokenHash && otpType) {
         const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType })
         if (verifyError) {
-          setError("Ce lien de confirmation est invalide ou a expiré. Merci de renvoyer l'email depuis la page d'inscription.")
+          setError("Ce lien a expiré ou est invalide. Merci de relancer la réinitialisation du mot de passe.")
           return
         }
         router.replace(next)
@@ -42,7 +43,7 @@ function AuthCallbackScreen() {
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         if (exchangeError) {
-          setError("Ce lien de confirmation est invalide ou a expiré. Merci de renvoyer l'email depuis la page d'inscription.")
+          setError("Ce lien a expiré ou est invalide. Merci de relancer la réinitialisation du mot de passe.")
           return
         }
         router.replace(next)
@@ -62,10 +63,11 @@ function AuthCallbackScreen() {
 
   return (
     <Card style={{ maxWidth: 420 }}>
-      <div style={{ textAlign: 'center' }}>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <p style={{ fontSize: 13, color: (linkError || error) ? 'var(--color-error)' : 'var(--color-muted-foreground)', margin: 0 }}>
           {linkError || error || 'Confirmation en cours…'}
         </p>
+        {(linkError || error) && <Btn onClick={() => router.push('/reset-password')}>Relancer la réinitialisation</Btn>}
       </div>
     </Card>
   )
