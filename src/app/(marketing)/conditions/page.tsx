@@ -89,8 +89,8 @@ export default function ConditionsPage() {
       <LegalSection title="10. Contact">
         <p>
           Pour toute question relative aux présentes conditions, vous pouvez nous écrire à{' '}
-          <a href="mailto:contact@mouhami.plus" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
-            contact@mouhami.plus
+          <a href="mailto:mouhamiplus@gmail.com" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
+            mouhamiplus@gmail.com
           </a>
           .
         </p>

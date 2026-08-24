@@ -59,8 +59,8 @@ export default function ConfidentialitePage() {
         <p>
           Conformément à la réglementation applicable, vous disposez d&apos;un droit d&apos;accès, de rectification,
           d&apos;opposition et de suppression de vos données à caractère personnel. Pour l&apos;exercer, contactez-nous à{' '}
-          <a href="mailto:contact@mouhami.plus" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
-            contact@mouhami.plus
+          <a href="mailto:mouhamiplus@gmail.com" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
+            mouhamiplus@gmail.com
           </a>
           . Vous pouvez également saisir l&apos;Instance Nationale de Protection des Données Personnelles (INPDP) en
           cas de litige non résolu directement avec nous.
@@ -78,8 +78,8 @@ export default function ConfidentialitePage() {
       <LegalSection title="9. Contact">
         <p>
           Pour toute question relative à cette politique ou au traitement de vos données, écrivez-nous à{' '}
-          <a href="mailto:contact@mouhami.plus" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
-            contact@mouhami.plus
+          <a href="mailto:mouhamiplus@gmail.com" style={{ color: 'var(--color-navy)', fontWeight: 500 }}>
+            mouhamiplus@gmail.com
           </a>
           .
         </p>

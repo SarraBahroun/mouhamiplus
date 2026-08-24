@@ -657,8 +657,8 @@ export default async function MarketingHomePage() {
                 {[
                   {
                     label: 'E-mail',
-                    value: 'contact@mouhami.plus',
-                    href: 'mailto:contact@mouhami.plus',
+                    value: 'mouhamiplus@gmail.com',
+                    href: 'mailto:mouhamiplus@gmail.com',
                     icon: (
                       <path d="M2 4h16v12H2V4zm0 0l8 6 8-6" stroke="var(--color-navy)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                     ),

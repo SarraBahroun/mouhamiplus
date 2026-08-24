@@ -2,7 +2,7 @@
 
 import { sendTransactionalEmail } from '@/lib/mailer'
 
-const CONTACT_RECIPIENT = 'contact@mouhami.plus'
+const CONTACT_RECIPIENT = 'mouhamiplus@gmail.com'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type ContactFormState = {
@@ -64,7 +64,7 @@ export async function sendContactMessage(
   if (error) {
     return {
       status: 'error',
-      message: "L'envoi a échoué. Réessayez, ou écrivez-nous directement à contact@mouhami.plus.",
+      message: "L'envoi a échoué. Réessayez, ou écrivez-nous directement à mouhamiplus@gmail.com.",
     }
   }
 
