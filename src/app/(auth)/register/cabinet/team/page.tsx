@@ -5,12 +5,18 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Stepper } from '@/components/ui/Stepper'
 import { Btn } from '@/components/ui/Btn'
+import { REGISTER_CABINET_TEAM_COUNTS_KEY } from '../teamCountsKey'
 
 export default function RegisterCabinetTeamPage() {
   const router = useRouter()
   const [lawyers, setLawyers] = useState(2)
   const [secretaries, setSecretaries] = useState(1)
   const [interns, setInterns] = useState(0)
+
+  const submit = () => {
+    sessionStorage.setItem(REGISTER_CABINET_TEAM_COUNTS_KEY, JSON.stringify({ lawyers, secretaries, interns }))
+    router.push('/register/cabinet/invite')
+  }
 
   return (
     <Card style={{ maxWidth: 480 }}>
@@ -27,7 +33,7 @@ export default function RegisterCabinetTeamPage() {
         <Stepper label="Stagiaires" value={interns} onChange={setInterns} hint="Accès limité, supervision obligatoire" />
 
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={() => router.push('/register/cabinet/invite')}>Continuer</Btn>
+          <Btn fullWidth onClick={submit}>Continuer</Btn>
           <Btn fullWidth variant="ghost" onClick={() => router.push('/register/cabinet')}>Retour</Btn>
         </div>
       </div>

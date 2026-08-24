@@ -1,23 +1,75 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Btn } from '@/components/ui/Btn'
 import { InviteList, InviteRow } from '@/components/onboarding/InviteList'
+import { sendInvites } from '@/lib/invite-rows'
+import { useToast } from '@/providers/ToastProvider'
+import { REGISTER_CABINET_TEAM_COUNTS_KEY, RegisterCabinetTeamCounts } from '../teamCountsKey'
 
 const ROLE_OPTIONS = [
-  { value: 'collaborator', label: 'Avocat' },
+  { value: 'owner', label: 'Avocat associé' },
+  { value: 'collaborator', label: 'Avocat collaborateur' },
   { value: 'secretary', label: 'Secrétaire' },
   { value: 'intern', label: 'Stagiaire' },
 ]
 
+const DEFAULT_ROWS: InviteRow[] = [{ id: 1, name: '', email: '', role: 'collaborator' }]
+
+function rowsFromTeamCounts(counts: RegisterCabinetTeamCounts): InviteRow[] {
+  let id = 1
+  const rows: InviteRow[] = []
+  for (let i = 0; i < counts.lawyers; i++) rows.push({ id: id++, name: '', email: '', role: 'collaborator' })
+  for (let i = 0; i < counts.secretaries; i++) rows.push({ id: id++, name: '', email: '', role: 'secretary' })
+  for (let i = 0; i < counts.interns; i++) rows.push({ id: id++, name: '', email: '', role: 'intern', supervisorRowId: '' })
+  return rows.length ? rows : DEFAULT_ROWS
+}
+
 export default function RegisterCabinetInvitePage() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [inviteNow, setInviteNow] = useState(true)
-  const [rows, setRows] = useState<InviteRow[]>([
-    { id: 1, name: '', email: '', role: 'collaborator' },
-  ])
+  const [rows, setRows] = useState<InviteRow[]>(DEFAULT_ROWS)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // Lu côté client après montage (pas dans l'état initial) pour rester
+  // identique au rendu serveur et éviter un mismatch d'hydratation.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(REGISTER_CABINET_TEAM_COUNTS_KEY)
+    if (!raw) return
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture ponctuelle de sessionStorage au montage, pas une synchro externe continue
+      setRows(rowsFromTeamCounts(JSON.parse(raw)))
+    } catch {
+      // valeur corrompue — on garde la ligne par défaut
+    }
+  }, [])
+
+  const submit = async () => {
+    setError('')
+    if (inviteNow) {
+      const filled = rows.filter((r) => r.name.trim() && r.email.trim())
+      const missingSupervisor = filled.some((r) => r.role === 'intern' && !r.supervisorRowId)
+      if (missingSupervisor) {
+        setError('Merci de désigner un superviseur pour chaque stagiaire.')
+        return
+      }
+      if (filled.length) {
+        setLoading(true)
+        const { sent, failed } = await sendInvites(rows)
+        setLoading(false)
+        if (failed.length) {
+          showToast(`${sent} invitation(s) envoyée(s), ${failed.length} échec(s) : ${failed.join(', ')}`)
+        } else if (sent) {
+          showToast(`${sent} invitation(s) envoyée(s).`)
+        }
+      }
+    }
+    router.push('/register/plan')
+  }
 
   return (
     <Card style={{ maxWidth: 520 }}>
@@ -54,11 +106,13 @@ export default function RegisterCabinetInvitePage() {
         </div>
 
         {inviteNow && (
-          <InviteList rows={rows} setRows={setRows} roleOptions={ROLE_OPTIONS} />
+          <InviteList rows={rows} setRows={setRows} roleOptions={ROLE_OPTIONS} supervisableRoles={['owner', 'collaborator']} />
         )}
 
+        {error && <p style={{ fontSize: 13, color: 'var(--color-error)', margin: 0 }}>{error}</p>}
+
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={() => router.push('/register/plan')}>Continuer</Btn>
+          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Continuer'}</Btn>
           <Btn fullWidth variant="ghost" onClick={() => router.push('/register/cabinet/team')}>Retour</Btn>
         </div>
       </div>

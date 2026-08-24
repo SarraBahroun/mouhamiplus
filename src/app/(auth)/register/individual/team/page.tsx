@@ -7,11 +7,14 @@ import { Divider } from '@/components/ui/Divider'
 import { Stepper } from '@/components/ui/Stepper'
 import { Btn } from '@/components/ui/Btn'
 import { InviteList, InviteRow } from '@/components/onboarding/InviteList'
+import { sendInvites } from '@/lib/invite-rows'
+import { useToast } from '@/providers/ToastProvider'
 import { REGISTER_INDIVIDUAL_STORAGE_KEY } from '../storageKey'
 import { registerIndividual } from '../actions'
 
 export default function RegisterIndividualTeamPage() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [secretaryCount, setSecretaryCount] = useState(1)
   const [inviteNow, setInviteNow] = useState(true)
   const [rows, setRows] = useState<InviteRow[]>([{ id: 1, name: '', email: '', role: 'secretary' }])
@@ -23,6 +26,23 @@ export default function RegisterIndividualTeamPage() {
       router.replace('/register/individual')
     }
   }, [router])
+
+  useEffect(() => {
+    setRows((prev) => {
+      if (secretaryCount === prev.length) return prev
+      if (secretaryCount > prev.length) {
+        const nextId = prev.length ? Math.max(...prev.map((r) => r.id)) : 0
+        const additions = Array.from({ length: secretaryCount - prev.length }, (_, i) => ({
+          id: nextId + i + 1,
+          name: '',
+          email: '',
+          role: 'secretary',
+        }))
+        return [...prev, ...additions]
+      }
+      return prev.slice(0, secretaryCount)
+    })
+  }, [secretaryCount])
 
   const submit = async () => {
     const raw = sessionStorage.getItem(REGISTER_INDIVIDUAL_STORAGE_KEY)
@@ -46,12 +66,23 @@ export default function RegisterIndividualTeamPage() {
       city: data.city ?? '',
       firmPhone: data.firmPhone ?? '',
     })
-    setLoading(false)
     if (result.error) {
+      setLoading(false)
       setError(result.error)
       return
     }
     sessionStorage.removeItem(REGISTER_INDIVIDUAL_STORAGE_KEY)
+
+    if (inviteNow && rows.some((r) => r.name.trim() && r.email.trim())) {
+      const { sent, failed } = await sendInvites(rows)
+      if (failed.length) {
+        showToast(`${sent} invitation(s) envoyée(s), ${failed.length} échec(s) : ${failed.join(', ')}`)
+      } else if (sent) {
+        showToast(`${sent} invitation(s) envoyée(s).`)
+      }
+    }
+
+    setLoading(false)
     router.push('/register/plan')
   }
 

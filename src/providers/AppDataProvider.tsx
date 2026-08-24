@@ -8,7 +8,7 @@ import { AppointmentRequestStatus } from '@/lib/appointment-requests'
 import { InvoiceStatus, PaymentStatus, ContractStatus } from '@/lib/finance-data'
 import { PermissionSet } from '@/lib/permissions'
 import { createClient } from '@/lib/supabase/client'
-import { inviteMember } from '@/app/(app)/members/actions'
+import { inviteMember, type InviteMemberInput, type InviteMemberResult } from '@/app/(app)/members/actions'
 
 export interface Member {
   id: string
@@ -171,14 +171,7 @@ export interface AuditLogEntry {
   detailAfter: string | null
 }
 
-interface NewMemberInput {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  role: 'secretary' | 'collaborator' | 'intern'
-  supervisorId?: string | null
-}
+type NewMemberInput = InviteMemberInput
 
 interface NewClientInput {
   name: string
@@ -241,7 +234,7 @@ interface NewCorrespondenceInput {
   recipient: string
 }
 
-export type InviteMemberOutcome = { id: string; tempPassword: string } | { error: string }
+export type InviteMemberOutcome = InviteMemberResult
 
 interface AppDataContextValue {
   loading: boolean

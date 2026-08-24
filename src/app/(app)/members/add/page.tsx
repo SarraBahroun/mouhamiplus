@@ -5,16 +5,25 @@ import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { MemberRole, ROLE_META } from '@/lib/members-data'
+import { useSession } from '@/providers/SessionProvider'
 
-type AssignableRole = Exclude<MemberRole, 'owner'>
+type AssignableRole = MemberRole
 
 const roleTargets: Record<AssignableRole, string> = {
+  owner: '/members/add/associate',
   secretary: '/members/add/secretary',
   collaborator: '/members/add/collaborator',
   intern: '/members/add/intern',
 }
 
 const icons: Record<AssignableRole, React.ReactNode> = {
+  owner: (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+      <path d="M14 3l9 5v6c0 6-3.8 9.8-9 11-5.2-1.2-9-5-9-11V8l9-5z" opacity="0.18" />
+      <path d="M14 3l9 5v6c0 6-3.8 9.8-9 11-5.2-1.2-9-5-9-11V8l9-5z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+      <path d="M10 14l3 3 5-5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   secretary: (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
       <rect x="4" y="6" width="20" height="16" rx="2" opacity="0.2" />
@@ -41,6 +50,14 @@ const icons: Record<AssignableRole, React.ReactNode> = {
 }
 
 const perms: Record<AssignableRole, { label: string; granted: boolean }[]> = {
+  owner: [
+    { label: 'Tous les dossiers', granted: true },
+    { label: 'Finance & paiements', granted: true },
+    { label: 'Gestion des membres', granted: true },
+    { label: 'Paramètres du cabinet', granted: true },
+    { label: 'Accès IA', granted: true },
+    { label: 'Suppression', granted: true },
+  ],
   secretary: [
     { label: 'Lecture dossiers', granted: true },
     { label: 'Gestion agenda', granted: true },
@@ -69,7 +86,11 @@ const perms: Record<AssignableRole, { label: string; granted: boolean }[]> = {
 
 export default function MembersAddRolePage() {
   const router = useRouter()
+  const { realProfile } = useSession()
   const [selected, setSelected] = useState<AssignableRole | null>(null)
+  // Seul un avocat associé peut en désigner un autre — le serveur applique la même règle.
+  const assignableRoles: AssignableRole[] =
+    realProfile?.role === 'owner' ? ['owner', 'secretary', 'collaborator', 'intern'] : ['secretary', 'collaborator', 'intern']
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
@@ -84,7 +105,7 @@ export default function MembersAddRolePage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {(['secretary', 'collaborator', 'intern'] as AssignableRole[]).map((role) => {
+          {assignableRoles.map((role) => {
             const m = ROLE_META[role]
             const isSelected = selected === role
             return (

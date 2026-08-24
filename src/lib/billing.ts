@@ -5,6 +5,8 @@ export interface Plan {
   priceLabel: string
   tagline: string
   features: string[]
+  /** Nombre maximum de membres du cabinet (dont l'avocat associé). null = illimité. */
+  maxUsers: number | null
 }
 
 export const PLANS: Plan[] = [
@@ -15,6 +17,7 @@ export const PLANS: Plan[] = [
     priceLabel: '89 TND / mois',
     tagline: 'Pour l’avocat indépendant',
     features: ['Dossiers & clients illimités', 'Espace client inclus', 'Agenda & rappels d’audience', '1 utilisateur'],
+    maxUsers: 1,
   },
   {
     id: 'cabinet',
@@ -23,6 +26,7 @@ export const PLANS: Plan[] = [
     priceLabel: '249 TND / mois',
     tagline: 'Le plus populaire',
     features: ['Tout Essentiel, plus :', 'Jusqu’à 10 collaborateurs', 'Facturation & paiements', 'Permissions par rôle'],
+    maxUsers: 10,
   },
   {
     id: 'entreprise',
@@ -31,6 +35,7 @@ export const PLANS: Plan[] = [
     priceLabel: 'Sur devis',
     tagline: 'Cabinets multi-bureaux',
     features: ['Utilisateurs illimités', 'Accès API & intégrations', 'Audit & conformité avancés', 'Support dédié'],
+    maxUsers: null,
   },
 ]
 

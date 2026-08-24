@@ -24,6 +24,18 @@ export async function selectPlan(planId: string): Promise<{ error: string | null
     return { error: 'Profil introuvable.' }
   }
 
+  if (plan.maxUsers !== null) {
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('cabinet_id', profile.cabinet_id)
+    if ((count ?? 0) > plan.maxUsers) {
+      return {
+        error: `Le forfait ${plan.name} est limité à ${plan.maxUsers} utilisateur${plan.maxUsers > 1 ? 's' : ''}, mais votre cabinet en compte déjà ${count}. Choisissez un forfait supérieur, ou retirez des membres.`,
+      }
+    }
+  }
+
   const { error: updateError } = await supabase
     .from('cabinets')
     .update({ plan: plan.id })

@@ -9,22 +9,30 @@ export interface InviteMemberInput {
   lastName: string
   email: string
   phone: string
-  role: 'secretary' | 'collaborator' | 'intern'
+  role: 'owner' | 'secretary' | 'collaborator' | 'intern'
   supervisorId?: string | null
 }
 
-export type InviteMemberResult = { id: string; tempPassword: string } | { error: string }
+export type InviteMemberResult = { id: string; tempPassword: string; emailed: boolean } | { error: string }
 
 export async function inviteMember(input: InviteMemberInput): Promise<InviteMemberResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Non authentifié.' }
 
-  const { data: myProfile } = await supabase.from('profiles').select('cabinet_id').eq('id', user.id).single()
+  const { data: myProfile } = await supabase.from('profiles').select('cabinet_id, role').eq('id', user.id).single()
   if (!myProfile) return { error: 'Profil introuvable.' }
 
   const { data: allowed } = await supabase.rpc('auth_permission', { perm: 'manageUsers' })
   if (!allowed) return { error: "Vous n'avez pas la permission d'ajouter des membres." }
+
+  // Un avocat associé (owner) donne accès complet au cabinet — seul un associé
+  // existant peut en désigner un autre, même si manageUsers a été accordé à
+  // quelqu'un d'autre par ailleurs (sinon un collaborateur avec manageUsers
+  // pourrait s'auto-élever en s'attribuant le contrôle total du cabinet).
+  if (input.role === 'owner' && myProfile.role !== 'owner') {
+    return { error: "Seul un avocat associé peut désigner un autre avocat associé." }
+  }
 
   const admin = createAdminClient()
   const tempPassword = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
@@ -43,6 +51,7 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
   }
 
   const avatar = `${input.firstName[0] ?? ''}${input.lastName[0] ?? ''}`.toUpperCase() || '??'
+  const supervisorId = input.supervisorId === 'self' ? user.id : (input.supervisorId || null)
 
   const { error: profileError } = await admin.from('profiles').insert({
     id: userData.user.id,
@@ -52,7 +61,7 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
     role: input.role,
     email: input.email,
     phone: input.phone || null,
-    supervisor_id: input.supervisorId || null,
+    supervisor_id: supervisorId,
     avatar,
   })
   if (profileError) {
@@ -60,7 +69,16 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
     return { error: 'Impossible de créer le profil.' }
   }
 
-  return { id: userData.user.id, tempPassword }
+  const { error: emailError } = await sendTransactionalEmail({
+    to: input.email,
+    subject: 'Votre accès Mouhami+',
+    html: `<p>Bonjour ${input.firstName},</p>
+<p>Un compte Mouhami+ vient d'être créé pour vous.</p>
+<p>Identifiant : <strong>${input.email}</strong><br/>Mot de passe temporaire : <strong>${tempPassword}</strong></p>
+<p>Connectez-vous puis pensez à le changer.</p>`,
+  })
+
+  return { id: userData.user.id, tempPassword, emailed: !emailError }
 }
 
 export type ResetMemberPasswordResult = { tempPassword: string; emailed: boolean } | { error: string }
