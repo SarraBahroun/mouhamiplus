@@ -97,21 +97,25 @@ export function SplashScreen() {
           }}
         />
 
-        <span
+        <p
           className="animate-fade-up"
           style={{
             animationDelay: '1.4s',
             animationDuration: '1s',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 12,
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
             fontWeight: 500,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
+            fontSize: 18,
+            letterSpacing: '-0.005em',
             color: 'var(--color-sky-soft)',
+            margin: 0,
+            maxWidth: 360,
+            textAlign: 'center',
+            lineHeight: 1.5,
           }}
         >
-          Plateforme juridique de confiance
-        </span>
+          « Nul n&apos;est censé ignorer la loi »
+        </p>
       </div>
     </div>
   )
