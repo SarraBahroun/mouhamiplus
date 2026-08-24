@@ -109,7 +109,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </svg>
             </button>
           )}
-          <Logo size="sm" />
+          <button
+            onClick={() => router.push('/')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+            aria-label="Retour à l'accueil"
+          >
+            <Logo size="sm" />
+          </button>
         </div>
         <LangSelector lang={lang} setLang={setLang} />
       </header>
