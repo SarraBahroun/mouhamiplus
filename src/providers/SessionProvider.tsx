@@ -116,6 +116,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const hasPermission = (key: PermissionKey) => {
     if (currentUserId === 'self') {
       if (!realProfile) return false
+      const override = memberPermissionOverrides[realProfile.id]
+      if (override) return override[key]
       if (realProfile.role === 'owner') return true
       return ROLE_DEFAULT_PERMISSIONS[realProfile.role][key]
     }

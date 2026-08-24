@@ -16,7 +16,12 @@ const AUTH_FLOW_BACK: Record<string, string> = {
   '/register/cabinet': '/register',
   '/register/cabinet/team': '/register/cabinet',
   '/register/cabinet/invite': '/register/cabinet/team',
-  '/register/plan': '/verify-email',
+  // '/register/plan' est atteint depuis deux flows différents (cabinet ou individuel) et
+  // n'a donc pas de prédécesseur unique — 'back' déclenche un router.back() plutôt qu'une
+  // cible fixe. Pointait auparavant vers /verify-email, une page qui n'est plus utilisée
+  // par le flow réel (les comptes sont confirmés et connectés directement à l'inscription) :
+  // le bouton retour y menait à une impasse (formulaire de renvoi désactivé, pas de retour).
+  '/register/plan': 'back',
   '/register/payment': '/register/plan',
   '/2fa-setup': '/register',
   '/reset-password': '/login',
@@ -86,7 +91,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           {backTarget && (
             <button
-              onClick={() => router.push(backTarget)}
+              onClick={() => (backTarget === 'back' ? router.back() : router.push(backTarget))}
               style={{
                 background: 'none',
                 border: 'none',

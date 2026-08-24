@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { sendTransactionalEmail } from '@/lib/mailer'
+import { planById } from '@/lib/billing'
 
 export interface InviteMemberInput {
   firstName: string
@@ -32,6 +33,22 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
   // pourrait s'auto-élever en s'attribuant le contrôle total du cabinet).
   if (input.role === 'owner' && myProfile.role !== 'owner') {
     return { error: "Seul un avocat associé peut désigner un autre avocat associé." }
+  }
+
+  // Le forfait limite le nombre de membres — vérifié ici aussi (pas seulement au choix
+  // du forfait à l'inscription) pour couvrir la croissance d'équipe post-inscription.
+  const { data: cabinetRow } = await supabase.from('cabinets').select('plan').eq('id', myProfile.cabinet_id).single()
+  const plan = cabinetRow?.plan ? planById(cabinetRow.plan) : undefined
+  if (plan && plan.maxUsers !== null) {
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('cabinet_id', myProfile.cabinet_id)
+    if ((count ?? 0) >= plan.maxUsers) {
+      return {
+        error: `Votre forfait ${plan.name} est limité à ${plan.maxUsers} utilisateur${plan.maxUsers > 1 ? 's' : ''}. Passez à un forfait supérieur pour ajouter des membres.`,
+      }
+    }
   }
 
   const admin = createAdminClient()

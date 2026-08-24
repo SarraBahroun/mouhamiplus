@@ -32,7 +32,7 @@ export default function RegisterPlanPage() {
           Choisissez votre forfait
         </h1>
         <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          Vous pourrez changer de forfait à tout moment depuis les paramètres.
+          Vous pourrez changer de forfait à tout moment en nous contactant.
         </p>
       </div>
 
