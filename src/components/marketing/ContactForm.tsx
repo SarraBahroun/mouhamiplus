@@ -1,8 +1,12 @@
 'use client'
 
 import { useActionState } from 'react'
-import { sendContactMessage, initialContactFormState } from '@/app/(marketing)/actions'
+import { sendContactMessage, type ContactFormState } from '@/app/(marketing)/actions'
 import { TYPE } from './theme'
+
+// Une constante objet ne peut pas être exportée depuis un fichier 'use server' (seules les
+// fonctions async le peuvent) — elle vit ici, côté client, plutôt que dans actions.ts.
+const initialContactFormState: ContactFormState = { status: 'idle', message: '' }
 
 const inputStyle: React.CSSProperties = {
   width: '100%',

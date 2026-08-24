@@ -10,8 +10,6 @@ export type ContactFormState = {
   message: string
 }
 
-export const initialContactFormState: ContactFormState = { status: 'idle', message: '' }
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
