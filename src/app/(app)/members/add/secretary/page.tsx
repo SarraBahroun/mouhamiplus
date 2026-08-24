@@ -8,13 +8,14 @@ import { Btn } from '@/components/ui/Btn'
 import { Toggle } from '@/components/ui/Toggle'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { BaseMemberFields, MemberFormFields } from '@/components/members/BaseMemberFields'
+import { ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
 
 export default function MembersFormSecretaryPage() {
   const router = useRouter()
   const { showToast } = useToast()
-  const { addMember } = useAppData()
+  const { addMember, setMemberPermissionOverride } = useAppData()
   const [form, setForm] = useState<MemberFormFields>({ firstName: '', lastName: '', email: '', phone: '' })
   const [perms, setPerms] = useState({ finance: false, ai: false })
   const [error, setError] = useState('')
@@ -23,11 +24,19 @@ export default function MembersFormSecretaryPage() {
   const submit = async () => {
     setLoading(true)
     const result = await addMember({ ...form, role: 'secretary' })
-    setLoading(false)
     if ('error' in result) {
+      setLoading(false)
       setError(result.error)
       return
     }
+    if (perms.finance || perms.ai) {
+      await setMemberPermissionOverride(result.id, {
+        ...ROLE_DEFAULT_PERMISSIONS.secretary,
+        viewPayments: perms.finance,
+        useAiTools: perms.ai,
+      })
+    }
+    setLoading(false)
     sessionStorage.setItem(`mouhamiplus-member-access-${result.id}`, JSON.stringify({ tempPassword: result.tempPassword }))
     showToast(result.emailed ? 'Compte créé — identifiants envoyés par e-mail' : 'Compte créé — mot de passe temporaire disponible sur la fiche du membre')
     router.push(`/members/${result.id}`)

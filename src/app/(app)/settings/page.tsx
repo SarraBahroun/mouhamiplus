@@ -65,9 +65,15 @@ export default function SettingsPage() {
       .eq('id', realProfile.id)
 
     let cabinetError = null
-    if (cabinetId) {
-      const { error } = await supabase.from('cabinets').update({ name: firm.name, address: firm.address || null }).eq('id', cabinetId)
-      cabinetError = error
+    if (cabinetId && realProfile.role === 'owner') {
+      // .select() est nécessaire pour détecter un blocage RLS : sans lui, une mise à jour
+      // refusée par la policy (0 ligne affectée) renvoie quand même 204 sans `error`.
+      const { data, error } = await supabase
+        .from('cabinets')
+        .update({ name: firm.name, address: firm.address || null })
+        .eq('id', cabinetId)
+        .select('id')
+      cabinetError = error ?? (data && data.length === 0 ? new Error('cabinet_update_blocked') : null)
     }
     setSaving(false)
     if (profileError || cabinetError) {
@@ -101,8 +107,13 @@ export default function SettingsPage() {
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '20px 22px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>Cabinet</h2>
           <div className="flex flex-col gap-4">
-            <Input label="Nom du cabinet" value={firm.name} onChange={g('name')} />
-            <Input label="Adresse" value={firm.address} onChange={g('address')} />
+            <Input label="Nom du cabinet" value={firm.name} onChange={g('name')} disabled={realProfile?.role !== 'owner'} />
+            <Input label="Adresse" value={firm.address} onChange={g('address')} disabled={realProfile?.role !== 'owner'} />
+            {realProfile?.role !== 'owner' && (
+              <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: 0 }}>
+                Seul un avocat associé peut modifier les informations du cabinet.
+              </p>
+            )}
           </div>
         </div>
 

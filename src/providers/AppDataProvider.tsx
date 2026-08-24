@@ -22,6 +22,7 @@ export interface Member {
   avatar: string
   joinedAt: string
   lastActive: string
+  specialities: string[]
 }
 
 export interface ClientNotificationPreferences {
@@ -240,9 +241,9 @@ interface AppDataContextValue {
   loading: boolean
   members: Member[]
   addMember: (input: NewMemberInput) => Promise<InviteMemberOutcome>
-  toggleMemberStatus: (id: string) => Promise<void>
+  toggleMemberStatus: (id: string) => Promise<{ error: string | null }>
   memberPermissionOverrides: Record<string, PermissionSet>
-  setMemberPermissionOverride: (id: string, perms: PermissionSet | null) => Promise<void>
+  setMemberPermissionOverride: (id: string, perms: PermissionSet | null) => Promise<{ error: string | null }>
 
   clients: Client[]
   addClient: (input: NewClientInput) => Promise<string | null>
@@ -303,6 +304,7 @@ function mapMember(row: Record<string, unknown>): Member {
     avatar: (row.avatar as string) ?? '??',
     joinedAt: row.joined_at as string,
     lastActive: row.last_active as string,
+    specialities: (row.specialities as string[]) ?? [],
   }
 }
 
@@ -551,28 +553,37 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return result
   }
 
-  const toggleMemberStatus = async (id: string) => {
+  const toggleMemberStatus = async (id: string): Promise<{ error: string | null }> => {
     const member = members.find((m) => m.id === id)
-    if (!member) return
+    if (!member) return { error: 'Membre introuvable.' }
     const newStatus: MemberStatus = member.status === 'active' ? 'inactive' : 'active'
     const supabase = createClient()
-    const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', id)
-    if (!error) setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m)))
+    // .select() nécessaire pour distinguer un vrai succès d'un blocage RLS silencieux
+    // (trigger forbid_unprivileged_role_status_change, migration 0009) : sans lui, un
+    // update refusé renvoie quand même 0 erreur.
+    const { data, error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', id).select('id')
+    if (error) return { error: error.message }
+    if (!data || data.length === 0) return { error: "Vous n'avez pas la permission de modifier ce membre." }
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m)))
+    return { error: null }
   }
 
-  const setMemberPermissionOverride = async (id: string, perms: PermissionSet | null) => {
+  const setMemberPermissionOverride = async (id: string, perms: PermissionSet | null): Promise<{ error: string | null }> => {
     const supabase = createClient()
     if (perms === null) {
-      await supabase.from('permission_overrides').delete().eq('profile_id', id)
+      const { error } = await supabase.from('permission_overrides').delete().eq('profile_id', id)
+      if (error) return { error: error.message }
       setMemberPermissionOverrides((prev) => {
         const next = { ...prev }
         delete next[id]
         return next
       })
     } else {
-      await supabase.from('permission_overrides').upsert({ profile_id: id, permissions: perms })
+      const { error } = await supabase.from('permission_overrides').upsert({ profile_id: id, permissions: perms })
+      if (error) return { error: error.message }
       setMemberPermissionOverrides((prev) => ({ ...prev, [id]: perms }))
     }
+    return { error: null }
   }
 
   const addClient = async (input: NewClientInput): Promise<string | null> => {

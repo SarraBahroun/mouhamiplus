@@ -23,7 +23,7 @@ export default function MembersFormAssociatePage() {
 
   const submit = async () => {
     setLoading(true)
-    const result = await addMember({ ...form, role: 'owner' })
+    const result = await addMember({ ...form, role: 'owner', specialities: specs })
     setLoading(false)
     if ('error' in result) {
       setError(result.error)

@@ -23,7 +23,7 @@ export default function MembersFormCollaboratorPage() {
 
   const submit = async () => {
     setLoading(true)
-    const result = await addMember({ ...form, role: 'collaborator' })
+    const result = await addMember({ ...form, role: 'collaborator', specialities: specs })
     setLoading(false)
     if ('error' in result) {
       setError(result.error)

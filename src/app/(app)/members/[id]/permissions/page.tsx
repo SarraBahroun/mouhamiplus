@@ -31,7 +31,11 @@ export default function MemberPermissionsPage({ params }: { params: Promise<{ id
   }
 
   const save = async () => {
-    await setMemberPermissionOverride(member.id, useDefault ? null : perms)
+    const { error } = await setMemberPermissionOverride(member.id, useDefault ? null : perms)
+    if (error) {
+      showToast("Impossible d'enregistrer les permissions — vérifiez que vous avez le droit de gérer les membres")
+      return
+    }
     showToast('Permissions enregistrées')
     router.push(`/members/${member.id}`)
   }

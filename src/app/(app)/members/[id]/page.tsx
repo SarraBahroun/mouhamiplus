@@ -11,13 +11,8 @@ import { ROLE_META, ACTION_COLORS } from '@/lib/members-data'
 import { PERMISSION_DEFS, ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useSession } from '@/providers/SessionProvider'
 import { resetMemberPassword } from '../actions'
-
-const EDIT_TARGET: Record<string, string> = {
-  secretary: '/members/add/secretary',
-  collaborator: '/members/add/collaborator',
-  intern: '/members/add/intern',
-}
 
 const ACTION_ICONS: Record<string, string> = {
   AJOUT: '📎',
@@ -31,6 +26,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
+  const { hasPermission } = useSession()
   const { members, cases, auditLog, toggleMemberStatus, memberPermissionOverrides, loading } = useAppData()
   const member = members.find((m) => m.id === id)
   const assignedCases = cases.filter((c) => c.assignedTo === id)
@@ -142,12 +138,18 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
 
         {/* Action buttons */}
         <div className="flex gap-2 flex-wrap">
-          {EDIT_TARGET[member.role] && (
-            <Btn variant="secondary" onClick={() => router.push(EDIT_TARGET[member.role])}>✏️ Modifier</Btn>
+          <Btn variant="secondary" onClick={() => router.push(`/members/${member.id}/edit`)}>✏️ Modifier</Btn>
+          {hasPermission('manageUsers') && (
+            <Btn
+              variant="secondary"
+              onClick={async () => {
+                const { error } = await toggleMemberStatus(member.id)
+                if (error) showToast(error)
+              }}
+            >
+              {member.status === 'active' ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte'}
+            </Btn>
           )}
-          <Btn variant="secondary" onClick={() => toggleMemberStatus(member.id)}>
-            {member.status === 'active' ? '🔒 Désactiver le compte' : '🔓 Réactiver le compte'}
-          </Btn>
           <Btn variant="secondary" onClick={resetPassword} disabled={resetting}>
             {resetting ? '…' : '🔑 Réinitialiser le mot de passe'}
           </Btn>
@@ -191,6 +193,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
                 { label: 'Date de création', value: new Date(member.joinedAt).toLocaleDateString('fr-FR') },
                 { label: 'Dernière connexion', value: new Date(member.lastActive).toLocaleDateString('fr-FR') },
                 ...(supervisor ? [{ label: 'Superviseur', value: `${supervisor.firstName} ${supervisor.lastName}` }] : []),
+                ...(member.specialities.length ? [{ label: 'Spécialités', value: member.specialities.join(', ') }] : []),
               ].map((row) => (
                 <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'baseline', borderBottom: '1px solid var(--color-border)', paddingBottom: 10 }}>
                   <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', minWidth: 130 }}>{row.label}</span>

@@ -12,6 +12,7 @@ export interface InviteMemberInput {
   phone: string
   role: 'owner' | 'secretary' | 'collaborator' | 'intern'
   supervisorId?: string | null
+  specialities?: string[]
 }
 
 export type InviteMemberResult = { id: string; tempPassword: string; emailed: boolean } | { error: string }
@@ -79,6 +80,7 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
     email: input.email,
     phone: input.phone || null,
     supervisor_id: supervisorId,
+    specialities: input.specialities ?? [],
     avatar,
   })
   if (profileError) {
@@ -96,6 +98,46 @@ export async function inviteMember(input: InviteMemberInput): Promise<InviteMemb
   })
 
   return { id: userData.user.id, tempPassword, emailed: !emailError }
+}
+
+export interface UpdateMemberInput {
+  firstName: string
+  lastName: string
+  phone: string
+}
+
+export async function updateMember(memberId: string, input: UpdateMemberInput): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non authentifié.' }
+
+  if (!input.firstName.trim() || !input.lastName.trim()) {
+    return { error: 'Le prénom et le nom sont obligatoires.' }
+  }
+
+  // Chacun peut modifier ses propres infos ; modifier celles d'un collègue exige manageUsers.
+  if (memberId !== user.id) {
+    const { data: allowed } = await supabase.rpc('auth_permission', { perm: 'manageUsers' })
+    if (!allowed) return { error: "Vous n'avez pas la permission de modifier ce membre." }
+  }
+
+  const { data: myProfile } = await supabase.from('profiles').select('cabinet_id').eq('id', user.id).single()
+  if (!myProfile) return { error: 'Profil introuvable.' }
+
+  const admin = createAdminClient()
+  const avatar = `${input.firstName[0] ?? ''}${input.lastName[0] ?? ''}`.toUpperCase() || '??'
+
+  const { data, error } = await admin
+    .from('profiles')
+    .update({ first_name: input.firstName, last_name: input.lastName, phone: input.phone || null, avatar })
+    .eq('id', memberId)
+    .eq('cabinet_id', myProfile.cabinet_id)
+    .select('id')
+
+  if (error) return { error: 'Impossible de mettre à jour le membre.' }
+  if (!data || data.length === 0) return { error: "Membre introuvable dans votre cabinet." }
+
+  return { error: null }
 }
 
 export type ResetMemberPasswordResult = { tempPassword: string; emailed: boolean } | { error: string }

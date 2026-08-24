@@ -8,10 +8,14 @@ import { RoleBadge } from '@/components/members/RoleBadge'
 import { StatusDot } from '@/components/members/StatusDot'
 import { MemberRole, ROLE_META } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useSession } from '@/providers/SessionProvider'
+import { useToast } from '@/providers/ToastProvider'
 
 export default function MembersListPage() {
   const router = useRouter()
   const { members, cases, toggleMemberStatus } = useAppData()
+  const { hasPermission } = useSession()
+  const { showToast } = useToast()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<MemberRole | 'all'>('all')
 
@@ -67,7 +71,7 @@ export default function MembersListPage() {
             />
           </div>
           <div className="flex gap-1" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
-            {(['all', 'secretary', 'collaborator', 'intern'] as const).map((r) => (
+            {(['all', 'owner', 'secretary', 'collaborator', 'intern'] as const).map((r) => (
               <button
                 key={r}
                 onClick={() => setRoleFilter(r)}
@@ -145,24 +149,27 @@ export default function MembersListPage() {
                 {cases.filter((c) => c.assignedTo === m.id).length} dossier{cases.filter((c) => c.assignedTo === m.id).length !== 1 ? 's' : ''}
               </span>
               <StatusDot status={m.status} />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggleMemberStatus(m.id)
-                }}
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 3,
-                  padding: '3px 8px',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--color-muted-foreground)',
-                }}
-              >
-                {m.status === 'active' ? 'Désactiver' : 'Activer'}
-              </button>
+              {hasPermission('manageUsers') && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    const { error } = await toggleMemberStatus(m.id)
+                    if (error) showToast(error)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 3,
+                    padding: '3px 8px',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-muted-foreground)',
+                  }}
+                >
+                  {m.status === 'active' ? 'Désactiver' : 'Activer'}
+                </button>
+              )}
             </div>
           ))}
         </div>
