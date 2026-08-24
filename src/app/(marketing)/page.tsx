@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Reveal } from '@/components/ui/Reveal'
 import { ScrollTopButton } from '@/components/ui/ScrollTopButton'
+import { SmoothAnchorLinks } from '@/components/ui/SmoothAnchorLinks'
 import { createClient } from '@/lib/supabase/server'
 
 function HeroLogo({ size = 40 }: { size?: number }) {
@@ -90,6 +91,31 @@ const ARTICLES = [
     title: 'Votre temps, respecté',
     body: 'Facturation, rappels d’audience et rapports générés automatiquement, pour vous consacrer au droit.',
   },
+]
+
+const REASONS = [
+  {
+    problem: 'Dossiers dispersés entre e-mails, WhatsApp et papier',
+    solution: 'Chaque dossier centralisé, avec pièces, historique et calendrier au même endroit',
+  },
+  {
+    problem: 'Heures perdues chaque semaine sur des tâches administratives',
+    solution: 'Facturation, rappels d’audience et rapports générés automatiquement',
+  },
+  {
+    problem: 'Aucune visibilité pour le client sur l’avancement de son dossier',
+    solution: 'Un espace client dédié, mis à jour en temps réel',
+  },
+  {
+    problem: 'Sécurité des données laissée au hasard',
+    solution: 'Authentification à deux facteurs et chiffrement activés par défaut',
+  },
+]
+
+const PERFORMANCE = [
+  { value: '-70%', label: 'Temps passé sur l’administratif' },
+  { value: '2x', label: 'Dossiers traités par collaborateur' },
+  { value: '<24h', label: 'Délai moyen de réponse client' },
 ]
 
 const PLANS = [
@@ -229,6 +255,13 @@ export default async function MarketingHomePage() {
         >
           <HeroLogo size={32} />
           <div className="flex items-center gap-6">
+            <a
+              href="#pourquoi"
+              className="hidden sm:inline"
+              style={{ color: 'var(--color-sky-soft)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
+            >
+              Pourquoi Mouhami+
+            </a>
             <a
               href="#contact"
               className="hidden sm:inline"
@@ -391,6 +424,96 @@ export default async function MarketingHomePage() {
           <div style={{ height: 8 }} />
         </div>
       </div>
+
+      {/* Pourquoi Mouhami+ — causes concrètes et performance mesurable, fond blanc chaud */}
+      <section id="pourquoi" style={{ background: '#FFFFFF', padding: '88px 24px', scrollMarginTop: 24 }}>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          <Reveal className="text-center" style={{ marginBottom: 48 }}>
+            <Eyebrow>Pourquoi Mouhami+</Eyebrow>
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: 'clamp(26px, 3.4vw, 34px)',
+                color: 'var(--color-ink)',
+                margin: '10px 0 10px',
+                textWrap: 'balance' as React.CSSProperties['textWrap'],
+              }}
+            >
+              Les problèmes que vivent les cabinets, et comment on les résout
+            </h2>
+            <p style={{ fontSize: 15, color: 'var(--color-muted-foreground)', margin: '0 auto', maxWidth: 560 }}>
+              Mouhami+ est né de constats simples, observés dans des dizaines de cabinets tunisiens.
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ marginBottom: 56 }}>
+            {REASONS.map((r, i) => (
+              <Reveal key={r.problem} delay={i * 0.08}>
+                <div
+                  style={{
+                    background: 'var(--color-secondary)',
+                    borderRadius: 10,
+                    padding: '22px 24px',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-error)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
+                      AVANT
+                    </span>
+                    <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.55 }}>
+                      {r.problem}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-sky)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
+                      AVEC MOUHAMI+
+                    </span>
+                    <p style={{ fontSize: 14.5, color: 'var(--color-ink)', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
+                      {r.solution}
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal>
+            <div
+              style={{
+                background: 'var(--color-navy)',
+                borderRadius: 12,
+                padding: '36px 28px',
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'space-around',
+                gap: 24,
+              }}
+            >
+              {PERFORMANCE.map((p) => (
+                <div key={p.label} style={{ textAlign: 'center', minWidth: 140 }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: 32,
+                      fontWeight: 500,
+                      color: 'var(--color-cream)',
+                    }}
+                  >
+                    {p.value}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: 'var(--color-sky-soft)', marginTop: 6 }}>{p.label}</div>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
 
       {/* Notre engagement — charte en quatre articles, fond crème */}
       <section style={{ padding: '96px 24px 88px' }}>
@@ -685,6 +808,27 @@ export default async function MarketingHomePage() {
               </div>
             </Reveal>
           </div>
+
+          <Reveal delay={0.2} style={{ marginTop: 40 }}>
+            <div
+              style={{
+                borderRadius: 12,
+                overflow: 'hidden',
+                border: '1px solid var(--color-border)',
+                height: 320,
+              }}
+            >
+              <iframe
+                title="Mouhami+ — iLab, Sfax"
+                src="https://www.google.com/maps?q=iLab+Sfax,+Tunisie&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0, display: 'block' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -719,6 +863,7 @@ export default async function MarketingHomePage() {
       </footer>
 
       <ScrollTopButton />
+      <SmoothAnchorLinks />
     </div>
   )
 }
