@@ -145,7 +145,7 @@ const PLANS = [
   },
 ]
 
-function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span
       style={{
@@ -154,8 +154,8 @@ function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?:
         fontWeight: 500,
         letterSpacing: '0.16em',
         textTransform: 'uppercase',
-        color: dark ? 'var(--color-sky)' : 'var(--color-sky)',
-        opacity: dark ? 1 : 0.9,
+        color: 'var(--color-sky)',
+        opacity: 0.9,
       }}
     >
       {children}
@@ -799,7 +799,7 @@ export default async function MarketingHomePage() {
                   24h
                 </span>
                 <p style={{ fontSize: 13.5, color: 'var(--color-sky-soft)', margin: 0, lineHeight: 1.6 }}>
-                  Délai de réponse moyen à toute demande envoyée depuis ce formulaire.
+                  Délai de réponse moyen par e-mail ou téléphone à toute demande de nos clients.
                 </p>
                 <div style={{ borderTop: '1px solid rgba(251,243,229,0.14)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <span style={{ fontSize: 13, color: 'var(--color-cream)', fontWeight: 500 }}>Lun – Ven, 9h – 18h</span>
