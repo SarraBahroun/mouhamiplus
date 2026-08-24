@@ -127,6 +127,11 @@ body {
 }
 .animate-watermark-spin { animation: watermarkSpin 120s linear infinite; }
 
+@keyframes splashOut {
+  to { opacity: 0; }
+}
+.animate-splash-out { animation: splashOut 0.55s ease forwards; pointer-events: none; }
+
 /* Scroll reveal (used by <Reveal>) */
 .reveal {
   opacity: 0;
@@ -140,7 +145,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-logo, .animate-fade-up, .animate-fade-down, .animate-glow-float,
-  .animate-ring-pulse, .aurora-bg, .grain-overlay, .animate-watermark-spin {
+  .animate-ring-pulse, .aurora-bg, .grain-overlay, .animate-watermark-spin,
+  .animate-splash-out {
     animation: none !important;
   }
   .reveal { opacity: 1; transform: none; transition: none; }
