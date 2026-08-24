@@ -4,6 +4,7 @@ import { Reveal } from '@/components/ui/Reveal'
 import { ScrollTopButton } from '@/components/ui/ScrollTopButton'
 import { SmoothAnchorLinks } from '@/components/ui/SmoothAnchorLinks'
 import { Eyebrow, SectionHeader } from '@/components/marketing/SectionHeader'
+import { ContactForm } from '@/components/marketing/ContactForm'
 import { TYPE, SPACE } from '@/components/marketing/theme'
 import { createClient } from '@/lib/supabase/server'
 
@@ -692,6 +693,21 @@ export default async function MarketingHomePage() {
                       />
                     ),
                   },
+                  {
+                    label: 'Horaires',
+                    value: 'Lun – Ven, 9h – 18h',
+                    href: undefined,
+                    icon: (
+                      <path
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16z M10 5v5l3.5 2"
+                        stroke="var(--color-navy)"
+                        strokeWidth="1.4"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ),
+                  },
                 ].map((c) => {
                   const rowStyle: React.CSSProperties = {
                     display: 'flex',
@@ -737,29 +753,7 @@ export default async function MarketingHomePage() {
             </Reveal>
 
             <Reveal delay={0.15}>
-              <div
-                style={{
-                  background: 'var(--color-navy)',
-                  borderRadius: 12,
-                  padding: '32px 28px',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 18,
-                  justifyContent: 'center',
-                }}
-              >
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: TYPE.statXL, fontWeight: 500, color: 'var(--color-cream)', fontVariantNumeric: 'tabular-nums' }}>
-                  24h
-                </span>
-                <p style={{ fontSize: TYPE.small, color: 'var(--color-sky-soft)', margin: 0, lineHeight: 1.6 }}>
-                  Délai de réponse moyen par e-mail ou téléphone à toute demande de nos clients.
-                </p>
-                <div style={{ borderTop: '1px solid rgba(251,243,229,0.14)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span style={{ fontSize: 13, color: 'var(--color-cream)', fontWeight: 500 }}>Lun – Ven, 9h – 18h</span>
-                  <span style={{ fontSize: 12.5, color: 'var(--color-sky-soft)' }}>iLab, Sfax — Tunisie</span>
-                </div>
-              </div>
+              <ContactForm />
             </Reveal>
           </div>
 
