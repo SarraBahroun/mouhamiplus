@@ -16,8 +16,8 @@ export const PLANS: Plan[] = [
     price: 89,
     priceLabel: '89 TND / mois',
     tagline: 'Pour l’avocat indépendant',
-    features: ['Dossiers & clients illimités', 'Espace client inclus', 'Agenda & rappels d’audience', '1 utilisateur'],
-    maxUsers: 1,
+    features: ['Dossiers & clients illimités', 'Espace client inclus', 'Agenda & rappels d’audience', 'Avocat + 1 secrétaire'],
+    maxUsers: 2,
   },
   {
     id: 'cabinet',

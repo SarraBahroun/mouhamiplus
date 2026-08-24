@@ -122,7 +122,7 @@ const PLANS = [
     name: 'Essentiel',
     price: '89',
     tagline: 'Pour l’avocat indépendant',
-    features: ['Dossiers & clients illimités', 'Espace client inclus', 'Agenda & rappels d’audience', '1 utilisateur'],
+    features: ['Dossiers & clients illimités', 'Espace client inclus', 'Agenda & rappels d’audience', 'Avocat + 1 secrétaire'],
     highlight: false,
   },
   {
