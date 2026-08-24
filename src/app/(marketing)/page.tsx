@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { Reveal } from '@/components/ui/Reveal'
 import { ScrollTopButton } from '@/components/ui/ScrollTopButton'
 import { SmoothAnchorLinks } from '@/components/ui/SmoothAnchorLinks'
+import { Eyebrow, SectionHeader } from '@/components/marketing/SectionHeader'
+import { TYPE, SPACE } from '@/components/marketing/theme'
 import { createClient } from '@/lib/supabase/server'
 
 function HeroLogo({ size = 40 }: { size?: number }) {
@@ -144,24 +146,6 @@ const PLANS = [
     highlight: false,
   },
 ]
-
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        fontFamily: 'var(--font-mono)',
-        fontSize: 12,
-        fontWeight: 500,
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-        color: 'var(--color-sky)',
-        opacity: 0.9,
-      }}
-    >
-      {children}
-    </span>
-  )
-}
 
 export default async function MarketingHomePage() {
   const supabase = await createClient()
@@ -324,7 +308,7 @@ export default async function MarketingHomePage() {
             style={{
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
-              fontSize: 'clamp(34px, 6vw, 64px)',
+              fontSize: TYPE.hero,
               color: 'var(--color-cream)',
               margin: 0,
               maxWidth: 780,
@@ -340,7 +324,7 @@ export default async function MarketingHomePage() {
           <p
             className="animate-fade-up"
             style={{
-              fontSize: 16.5,
+              fontSize: TYPE.heroLead,
               color: 'var(--color-sky-soft)',
               maxWidth: 540,
               margin: 0,
@@ -408,14 +392,14 @@ export default async function MarketingHomePage() {
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontVariantNumeric: 'tabular-nums',
-                    fontSize: 22,
+                    fontSize: TYPE.stat,
                     fontWeight: 500,
                     color: 'var(--color-cream)',
                   }}
                 >
                   {s.value}
                 </div>
-                <div style={{ fontSize: 11.5, color: 'var(--color-sky-soft)', marginTop: 4, letterSpacing: '0.02em' }}>
+                <div style={{ fontSize: TYPE.eyebrow - 0.5, color: 'var(--color-sky-soft)', marginTop: 4, letterSpacing: '0.02em' }}>
                   {s.label}
                 </div>
               </div>
@@ -428,24 +412,14 @@ export default async function MarketingHomePage() {
       {/* Pourquoi Mouhami+ — causes concrètes et performance mesurable, fond blanc chaud */}
       <section id="pourquoi" style={{ background: '#FFFFFF', padding: '88px 24px', scrollMarginTop: 24 }}>
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <Reveal className="text-center" style={{ marginBottom: 48 }}>
-            <Eyebrow>Pourquoi Mouhami+</Eyebrow>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 'clamp(26px, 3.4vw, 34px)',
-                color: 'var(--color-ink)',
-                margin: '10px 0 10px',
-                textWrap: 'balance' as React.CSSProperties['textWrap'],
-              }}
-            >
-              Les problèmes que vivent les cabinets, et comment on les résout
-            </h2>
-            <p style={{ fontSize: 15, color: 'var(--color-muted-foreground)', margin: '0 auto', maxWidth: 560 }}>
-              Mouhami+ est né de constats simples, observés dans des dizaines de cabinets tunisiens.
-            </p>
-          </Reveal>
+          <SectionHeader
+            eyebrow="Pourquoi Mouhami+"
+            title="Les problèmes que vivent les cabinets, et comment on les résout"
+            intro="Mouhami+ est né de constats simples, observés dans des dizaines de cabinets tunisiens."
+            align="center"
+            maxWidth={560}
+            style={{ marginBottom: SPACE['2xl'] }}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ marginBottom: 56 }}>
             {REASONS.map((r, i) => (
@@ -462,18 +436,18 @@ export default async function MarketingHomePage() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-error)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
+                    <span style={{ fontSize: TYPE.eyebrow - 1, fontWeight: 600, color: 'var(--color-error)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
                       AVANT
                     </span>
-                    <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.55 }}>
+                    <p style={{ fontSize: TYPE.body, color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.55 }}>
                       {r.problem}
                     </p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-sky)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
+                    <span style={{ fontSize: TYPE.eyebrow - 1, fontWeight: 600, color: 'var(--color-sky)', letterSpacing: '0.04em', flexShrink: 0, marginTop: 2 }}>
                       AVEC MOUHAMI+
                     </span>
-                    <p style={{ fontSize: 14.5, color: 'var(--color-ink)', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
+                    <p style={{ fontSize: TYPE.bodyStrong, color: 'var(--color-ink)', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>
                       {r.solution}
                     </p>
                   </div>
@@ -500,14 +474,14 @@ export default async function MarketingHomePage() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontVariantNumeric: 'tabular-nums',
-                      fontSize: 32,
+                      fontSize: TYPE.statLarge,
                       fontWeight: 500,
                       color: 'var(--color-cream)',
                     }}
                   >
                     {p.value}
                   </div>
-                  <div style={{ fontSize: 12.5, color: 'var(--color-sky-soft)', marginTop: 6 }}>{p.label}</div>
+                  <div style={{ fontSize: TYPE.caption, color: 'var(--color-sky-soft)', marginTop: 6 }}>{p.label}</div>
                 </div>
               ))}
             </div>
@@ -518,21 +492,11 @@ export default async function MarketingHomePage() {
       {/* Notre engagement — charte en quatre articles, fond crème */}
       <section style={{ padding: '96px 24px 88px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'left' }}>
-          <Reveal style={{ marginBottom: 40 }}>
-            <Eyebrow>Notre engagement</Eyebrow>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 'clamp(26px, 3.4vw, 34px)',
-                color: 'var(--color-ink)',
-                margin: '10px 0 0',
-                textWrap: 'balance' as React.CSSProperties['textWrap'],
-              }}
-            >
-              Quatre articles, une seule promesse
-            </h2>
-          </Reveal>
+          <SectionHeader
+            eyebrow="Notre engagement"
+            title="Quatre articles, une seule promesse"
+            style={{ marginBottom: SPACE.xl }}
+          />
 
           <div>
             {ARTICLES.map((a, i) => (
@@ -558,10 +522,10 @@ export default async function MarketingHomePage() {
                     {a.n}.
                   </span>
                   <div>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 600, margin: '0 0 6px', color: 'var(--color-ink)' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: TYPE.cardTitle, fontWeight: 600, margin: '0 0 6px', color: 'var(--color-ink)' }}>
                       {a.title}
                     </h3>
-                    <p style={{ fontSize: 14.5, color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.65, maxWidth: 520 }}>
+                    <p style={{ fontSize: TYPE.bodyStrong, color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.65, maxWidth: 520 }}>
                       {a.body}
                     </p>
                   </div>
@@ -575,23 +539,13 @@ export default async function MarketingHomePage() {
       {/* Abonnements — fond crème */}
       <section id="abonnements" style={{ padding: '40px 24px 96px', scrollMarginTop: 24 }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <Reveal className="text-center" style={{ marginBottom: 48 }}>
-            <Eyebrow>Abonnements</Eyebrow>
-            <h2
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: 'clamp(26px, 3.4vw, 34px)',
-                color: 'var(--color-ink)',
-                margin: '10px 0 10px',
-              }}
-            >
-              Des abonnements pensés pour chaque cabinet
-            </h2>
-            <p style={{ fontSize: 15, color: 'var(--color-muted-foreground)', margin: 0 }}>
-              Changez de formule à tout moment, sans engagement.
-            </p>
-          </Reveal>
+          <SectionHeader
+            eyebrow="Abonnements"
+            title="Des abonnements pensés pour chaque cabinet"
+            intro="Changez de formule à tout moment, sans engagement."
+            align="center"
+            style={{ marginBottom: SPACE['2xl'] }}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {PLANS.map((plan, i) => (
@@ -629,11 +583,11 @@ export default async function MarketingHomePage() {
                     </span>
                   )}
                   <div>
-                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: '0 0 4px', color: 'var(--color-ink)' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: TYPE.cardTitle, fontWeight: 600, margin: '0 0 4px', color: 'var(--color-ink)' }}>
                       {plan.name}
                     </h3>
                     {!plan.highlight && (
-                      <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>{plan.tagline}</p>
+                      <p style={{ fontSize: TYPE.small, color: 'var(--color-muted-foreground)', margin: 0 }}>{plan.tagline}</p>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -687,14 +641,14 @@ export default async function MarketingHomePage() {
                 style={{
                   fontFamily: 'var(--font-display)',
                   fontWeight: 600,
-                  fontSize: 'clamp(26px, 3.4vw, 34px)',
+                  fontSize: TYPE.heading,
                   color: 'var(--color-ink)',
                   margin: '10px 0 12px',
                 }}
               >
                 Parlons-en
               </h2>
-              <p style={{ fontSize: 15, color: 'var(--color-muted-foreground)', margin: '0 0 32px', maxWidth: 420, lineHeight: 1.6 }}>
+              <p style={{ fontSize: TYPE.intro, color: 'var(--color-muted-foreground)', margin: '0 0 32px', maxWidth: 420, lineHeight: 1.6 }}>
                 Une question, une démo à organiser ? Notre équipe vous répond rapidement.
               </p>
 
@@ -795,10 +749,10 @@ export default async function MarketingHomePage() {
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 40, fontWeight: 500, color: 'var(--color-cream)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: TYPE.statXL, fontWeight: 500, color: 'var(--color-cream)', fontVariantNumeric: 'tabular-nums' }}>
                   24h
                 </span>
-                <p style={{ fontSize: 13.5, color: 'var(--color-sky-soft)', margin: 0, lineHeight: 1.6 }}>
+                <p style={{ fontSize: TYPE.small, color: 'var(--color-sky-soft)', margin: 0, lineHeight: 1.6 }}>
                   Délai de réponse moyen par e-mail ou téléphone à toute demande de nos clients.
                 </p>
                 <div style={{ borderTop: '1px solid rgba(251,243,229,0.14)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
