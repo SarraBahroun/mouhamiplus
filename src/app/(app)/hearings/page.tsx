@@ -78,7 +78,7 @@ export default function HearingsPage() {
             >
               <div style={{ width: 48, textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--color-primary)' }}>
-                  {h.date.slice(8, 10)}
+                  {new Date(h.date).toLocaleDateString('fr-FR', { day: '2-digit' })}
                 </div>
                 <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>
                   {new Date(h.date).toLocaleDateString('fr-FR', { month: 'short' })}
@@ -89,7 +89,9 @@ export default function HearingsPage() {
                 <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{h.case.title} · {clients.find((cl) => cl.id === h.case.clientId)?.name}</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}>{h.date.slice(11)}</div>
+                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}>
+                  {new Date(h.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>{h.court}</div>
               </div>
             </div>

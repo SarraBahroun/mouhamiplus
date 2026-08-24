@@ -28,10 +28,17 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: pass })
-    if (signInError) {
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password: pass })
+    if (signInError || !signInData.user) {
       setLoading(false)
       setError('Email ou mot de passe incorrect.')
+      return
+    }
+    const { data: profileRow } = await supabase.from('profiles').select('id').eq('id', signInData.user.id).maybeSingle()
+    if (!profileRow) {
+      setLoading(false)
+      setError("Ce compte n'a pas d'accès cabinet. Utilisez l'espace client si vous êtes client.")
+      await supabase.auth.signOut()
       return
     }
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()

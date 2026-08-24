@@ -103,10 +103,15 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
     setNoteDraft('')
   }
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!messageDraft.trim()) return
-    addCaseMessage(caseData.id, currentUserName || 'Moi', messageDraft, 'out')
+    const text = messageDraft
     setMessageDraft('')
+    const ok = await addCaseMessage(caseData.id, currentUserName || 'Moi', text, 'out')
+    if (!ok) {
+      setMessageDraft(text)
+      showToast("Échec de l'envoi, réessayez")
+    }
   }
 
   const addHearing = async () => {

@@ -25,10 +25,15 @@ export default function ClientCaseDetailPage({ params }: { params: Promise<{ id:
   const meta = CASE_STATUS_META[caseData.status]
   const assignee = members.find((m) => m.id === caseData.assignedTo)
 
-  const send = () => {
+  const send = async () => {
     if (!draft.trim()) return
-    addCaseMessage(caseData.id, clientProfile.name, draft, 'in')
+    const text = draft
     setDraft('')
+    const ok = await addCaseMessage(caseData.id, clientProfile.name, text, 'in')
+    if (!ok) {
+      setDraft(text)
+      showToast("Échec de l'envoi, réessayez")
+    }
   }
 
   const openDocument = async (storagePath: string | null) => {

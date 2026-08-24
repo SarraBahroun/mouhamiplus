@@ -74,6 +74,7 @@ export default function ClientLoginPage() {
             <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Mot de passe oublié ?</span>
             <button
               type="button"
+              onClick={() => router.push('/reset-password')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', fontFamily: 'var(--font-body)' }}
             >
               Réinitialiser

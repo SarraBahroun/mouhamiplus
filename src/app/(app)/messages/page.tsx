@@ -24,14 +24,14 @@ export default function MessagesPage() {
   const requests = appointmentRequests
   const pendingCount = requests.filter((r) => r.status === 'pending').length
 
-  const accept = (id: string) => {
-    updateAppointmentRequest(id, { status: 'accepted' })
-    showToast('Rendez-vous accepté')
+  const accept = async (id: string) => {
+    const ok = await updateAppointmentRequest(id, { status: 'accepted' })
+    showToast(ok ? 'Rendez-vous accepté' : "Échec de l'action, réessayez")
   }
 
-  const decline = (id: string) => {
-    updateAppointmentRequest(id, { status: 'declined' })
-    showToast('Demande refusée')
+  const decline = async (id: string) => {
+    const ok = await updateAppointmentRequest(id, { status: 'declined' })
+    showToast(ok ? 'Demande refusée' : "Échec de l'action, réessayez")
   }
 
   const startReschedule = (id: string) => {
@@ -39,11 +39,11 @@ export default function MessagesPage() {
     setProposedDate('')
   }
 
-  const confirmReschedule = (id: string) => {
+  const confirmReschedule = async (id: string) => {
     if (!proposedDate) return
-    updateAppointmentRequest(id, { status: 'rescheduled', proposedDate })
+    const ok = await updateAppointmentRequest(id, { status: 'rescheduled', proposedDate })
     setReschedulingId(null)
-    showToast('Nouvel horaire proposé au client')
+    showToast(ok ? 'Nouvel horaire proposé au client' : "Échec de l'action, réessayez")
   }
 
   return (

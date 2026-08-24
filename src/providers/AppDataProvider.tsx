@@ -257,12 +257,12 @@ interface AppDataContextValue {
   addCaseDocument: (caseId: string, file: File) => Promise<boolean>
   getDocumentUrl: (storagePath: string) => Promise<string | null>
   addCaseNote: (caseId: string, author: string, text: string) => Promise<void>
-  addCaseMessage: (caseId: string, author: string, text: string, direction: CaseMessageDirection) => Promise<void>
+  addCaseMessage: (caseId: string, author: string, text: string, direction: CaseMessageDirection) => Promise<boolean>
   addCaseHearing: (caseId: string, input: NewCaseHearingInput) => Promise<boolean>
 
   appointmentRequests: AppointmentRequest[]
   addAppointmentRequest: (input: NewAppointmentRequestInput) => Promise<void>
-  updateAppointmentRequest: (id: string, patch: Partial<AppointmentRequest>) => Promise<void>
+  updateAppointmentRequest: (id: string, patch: Partial<AppointmentRequest>) => Promise<boolean>
 
   notifications: AppNotification[]
   markNotificationRead: (id: string) => Promise<void>
@@ -626,8 +626,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const updateCaseStatus = async (caseId: string, status: CaseStatus): Promise<boolean> => {
     const supabase = createClient()
-    const { error } = await supabase.from('cases').update({ status }).eq('id', caseId)
-    if (error) return false
+    // .select() nécessaire pour distinguer un vrai succès d'un blocage RLS silencieux :
+    // sans lui, un update refusé (0 ligne) renvoie quand même 0 erreur.
+    const { data, error } = await supabase.from('cases').update({ status }).eq('id', caseId).select('id')
+    if (error || !data || data.length === 0) return false
     setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, status } : c)))
     return true
   }
@@ -637,8 +639,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const task = c?.tasks.find((t) => t.id === taskId)
     if (!task) return
     const supabase = createClient()
-    const { error } = await supabase.from('case_tasks').update({ done: !task.done }).eq('id', taskId)
-    if (!error) {
+    const { data, error } = await supabase.from('case_tasks').update({ done: !task.done }).eq('id', taskId).select('id')
+    if (!error && data && data.length > 0) {
       setCases((prev) =>
         prev.map((cs) => (cs.id === caseId ? { ...cs, tasks: cs.tasks.map((t) => (t.id === taskId ? { ...t, done: !t.done } : t)) } : cs))
       )
@@ -707,20 +709,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, notes: [mapNote(data), ...c.notes] } : c)))
   }
 
-  const addCaseMessage = async (caseId: string, author: string, text: string, direction: CaseMessageDirection) => {
+  const addCaseMessage = async (caseId: string, author: string, text: string, direction: CaseMessageDirection): Promise<boolean> => {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('case_messages')
       .insert({ case_id: caseId, author_label: author, text, direction })
       .select()
       .single()
-    if (error || !data) return
+    if (error || !data) return false
     setCases((prev) => prev.map((c) => (c.id === caseId ? { ...c, messages: [...c.messages, mapMessage(data)] } : c)))
     if (direction === 'in') {
       await pushNotification({ audience: 'cabinet', text: `Nouveau message de ${author}`, href: `/cases/${caseId}` })
     } else {
       await pushNotification({ audience: 'client', text: 'Nouveau message de votre avocat', href: `/espace-client/dossiers/${caseId}` })
     }
+    return true
   }
 
   const addCaseHearing = async (caseId: string, input: NewCaseHearingInput): Promise<boolean> => {
@@ -741,7 +744,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const nextHearing = futureHearingDates[0]
 
     if (nextHearing && nextHearing !== c?.nextHearing) {
-      await supabase.from('cases').update({ next_hearing: nextHearing }).eq('id', caseId)
+      await supabase.from('cases').update({ next_hearing: nextHearing }).eq('id', caseId).select('id')
     }
 
     setCases((prev) =>
@@ -764,13 +767,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     await pushNotification({ audience: 'cabinet', text: `Nouvelle demande de rendez-vous de ${clientName}`, href: '/messages' })
   }
 
-  const updateAppointmentRequest = async (id: string, patch: Partial<AppointmentRequest>) => {
+  const updateAppointmentRequest = async (id: string, patch: Partial<AppointmentRequest>): Promise<boolean> => {
     const supabase = createClient()
     const dbPatch: Record<string, unknown> = {}
     if (patch.status !== undefined) dbPatch.status = patch.status
     if (patch.proposedDate !== undefined) dbPatch.proposed_date = patch.proposedDate
-    const { error } = await supabase.from('appointment_requests').update(dbPatch).eq('id', id)
-    if (error) return
+    const { data, error } = await supabase.from('appointment_requests').update(dbPatch).eq('id', id).select('id')
+    if (error || !data || data.length === 0) return false
     setAppointmentRequests((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
     if (patch.status === 'accepted') {
       await pushNotification({ audience: 'client', text: 'Votre rendez-vous a été accepté par le cabinet', href: '/espace-client/rendez-vous' })
@@ -779,6 +782,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     } else if (patch.status === 'declined') {
       await pushNotification({ audience: 'client', text: 'Votre demande de rendez-vous a été refusée', href: '/espace-client/rendez-vous' })
     }
+    return true
   }
 
   const addInvoice = async (input: NewInvoiceInput): Promise<string | null> => {
@@ -807,8 +811,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const updateInvoiceStatus = async (id: string, status: InvoiceStatus) => {
     const supabase = createClient()
-    const { error } = await supabase.from('invoices').update({ status }).eq('id', id)
-    if (!error) setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)))
+    const { data, error } = await supabase.from('invoices').update({ status }).eq('id', id).select('id')
+    if (!error && data && data.length > 0) setInvoices((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)))
   }
 
   const addPayment = async (input: NewPaymentInput): Promise<string | null> => {
@@ -855,8 +859,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const updateContractStatus = async (id: string, status: ContractStatus) => {
     const supabase = createClient()
-    const { error } = await supabase.from('contracts').update({ status }).eq('id', id)
-    if (!error) setContracts((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)))
+    const { data, error } = await supabase.from('contracts').update({ status }).eq('id', id).select('id')
+    if (!error && data && data.length > 0) setContracts((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)))
   }
 
   const addCorrespondence = async (input: NewCorrespondenceInput): Promise<string | null> => {
@@ -881,8 +885,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const markNotificationRead = async (id: string) => {
     const supabase = createClient()
-    const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id)
-    if (!error) setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    const { data, error } = await supabase.from('notifications').update({ read: true }).eq('id', id).select('id')
+    if (!error && data && data.length > 0) setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
   }
 
   const markAllNotificationsRead = async (audience: 'cabinet' | 'client') => {
@@ -890,8 +894,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
     const ids = notifications.filter((n) => n.audience === audience && !n.read).map((n) => n.id)
     if (ids.length === 0) return
-    const { error } = await supabase.from('notifications').update({ read: true }).in('id', ids)
-    if (!error) setNotifications((prev) => prev.map((n) => (n.audience === audience ? { ...n, read: true } : n)))
+    const { data, error } = await supabase.from('notifications').update({ read: true }).in('id', ids).select('id')
+    if (!error && data) {
+      const updatedIds = new Set(data.map((r) => r.id as string))
+      setNotifications((prev) => prev.map((n) => (updatedIds.has(n.id) ? { ...n, read: true } : n)))
+    }
   }
 
   const value: AppDataContextValue = {

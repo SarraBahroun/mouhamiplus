@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useSession } from '@/providers/SessionProvider'
 
 interface ScanResult {
   id: number
@@ -11,6 +12,7 @@ interface ScanResult {
   date: string
   caseTitle?: string
   excerpt: string
+  saved: boolean
 }
 
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
@@ -35,7 +37,8 @@ async function pdfFirstPageToCanvas(file: File): Promise<HTMLCanvasElement> {
 }
 
 export default function OcrPage() {
-  const { cases: initialCases } = useAppData()
+  const { cases: initialCases, addCaseDocument, addCaseNote } = useAppData()
+  const { currentUserName } = useSession()
   const [caseId, setCaseId] = useState('')
   const [scans, setScans] = useState<ScanResult[]>([])
   const [processing, setProcessing] = useState(false)
@@ -72,8 +75,20 @@ export default function OcrPage() {
         const excerpt = text ? (text.length > 240 ? `${text.slice(0, 240)}…` : text) : '(Aucun texte détecté sur ce document.)'
         const caseTitle = initialCases.find((c) => String(c.id) === caseId)?.title
 
+        // Rattache réellement le document au dossier choisi — sans ça, le sélecteur
+        // "Dossier associé" ne faisait que décorer un résultat qui disparaissait au refresh.
+        let saved = false
+        if (caseId) {
+          const uploaded = await addCaseDocument(caseId, file)
+          if (uploaded && text) {
+            await addCaseNote(caseId, currentUserName || 'Scanner OCR', `Texte extrait par OCR (${file.name}) :\n${text}`)
+          }
+          saved = uploaded
+          if (!uploaded) setError("La numérisation a réussi mais l'ajout au dossier a échoué — réessayez.")
+        }
+
         setScans((prev) => [
-          { id: Date.now(), name: file.name, date: new Date().toLocaleString('fr-FR'), caseTitle, excerpt },
+          { id: Date.now(), name: file.name, date: new Date().toLocaleString('fr-FR'), caseTitle, excerpt, saved },
           ...prev,
         ])
       } catch (e) {
@@ -83,7 +98,7 @@ export default function OcrPage() {
         setProgress(0)
       }
     },
-    [caseId, initialCases]
+    [caseId, initialCases, addCaseDocument, addCaseNote, currentUserName]
   )
 
   const openPicker = () => inputRef.current?.click()
@@ -192,7 +207,11 @@ export default function OcrPage() {
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>{s.name}</span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>{s.date}</span>
                   </div>
-                  {s.caseTitle && <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 6 }}>{s.caseTitle}</div>}
+                  {s.caseTitle && (
+                    <div style={{ fontSize: 12, color: s.saved ? 'var(--color-muted-foreground)' : '#B3261E', marginBottom: 6 }}>
+                      {s.caseTitle}{s.saved ? ' · ajouté au dossier' : ' · non enregistré dans le dossier'}
+                    </div>
+                  )}
                   <div
                     style={{
                       fontSize: 12,
