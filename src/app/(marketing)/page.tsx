@@ -5,6 +5,7 @@ import { ScrollTopButton } from '@/components/ui/ScrollTopButton'
 import { SmoothAnchorLinks } from '@/components/ui/SmoothAnchorLinks'
 import { Eyebrow, SectionHeader } from '@/components/marketing/SectionHeader'
 import { ContactForm } from '@/components/marketing/ContactForm'
+import { MobileNav } from '@/components/marketing/MobileNav'
 import { TYPE, SPACE } from '@/components/marketing/theme'
 import { createClient } from '@/lib/supabase/server'
 
@@ -68,9 +69,9 @@ function JusticeMark() {
 }
 
 const STATS = [
-  { value: '500+', label: 'Cabinets & avocats' },
-  { value: '18 000+', label: 'Dossiers suivis' },
+  { value: '2FA', label: 'Sécurité activée par défaut' },
   { value: '24 / 7', label: 'Accès sécurisé' },
+  { value: '2026', label: 'Ouverture des inscriptions' },
 ]
 
 const ARTICLES = [
@@ -113,12 +114,6 @@ const REASONS = [
     problem: 'Sécurité des données laissée au hasard',
     solution: 'Authentification à deux facteurs et chiffrement activés par défaut',
   },
-]
-
-const PERFORMANCE = [
-  { value: '-70%', label: 'Temps passé sur l’administratif' },
-  { value: '2x', label: 'Dossiers traités par collaborateur' },
-  { value: '<24h', label: 'Délai moyen de réponse client' },
 ]
 
 const PLANS = [
@@ -261,6 +256,7 @@ export default async function MarketingHomePage() {
             >
               Abonnements
             </a>
+            <MobileNav />
             <Link
               href="/register"
               style={{ color: 'var(--color-cream)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
@@ -462,29 +458,33 @@ export default async function MarketingHomePage() {
               style={{
                 background: 'var(--color-navy)',
                 borderRadius: 12,
-                padding: '36px 28px',
+                padding: '32px 28px',
                 display: 'flex',
                 flexWrap: 'wrap',
-                justifyContent: 'space-around',
-                gap: 24,
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 20,
               }}
             >
-              {PERFORMANCE.map((p) => (
-                <div key={p.label} style={{ textAlign: 'center', minWidth: 140 }}>
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontVariantNumeric: 'tabular-nums',
-                      fontSize: TYPE.statLarge,
-                      fontWeight: 500,
-                      color: 'var(--color-cream)',
-                    }}
-                  >
-                    {p.value}
-                  </div>
-                  <div style={{ fontSize: TYPE.caption, color: 'var(--color-sky-soft)', marginTop: 6 }}>{p.label}</div>
-                </div>
-              ))}
+              <p style={{ fontSize: TYPE.intro, color: 'var(--color-cream)', margin: 0, maxWidth: 480, lineHeight: 1.5 }}>
+                Mouhami+ ouvre bientôt ses inscriptions. Soyez parmi les premiers cabinets à l&apos;adopter.
+              </p>
+              <Link
+                href="/register"
+                style={{
+                  background: 'var(--color-cream)',
+                  color: 'var(--color-navy)',
+                  fontSize: TYPE.body,
+                  fontWeight: 600,
+                  padding: '11px 22px',
+                  borderRadius: 6,
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                S&apos;inscrire
+              </Link>
             </div>
           </Reveal>
         </div>
