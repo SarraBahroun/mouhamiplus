@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Worker as TesseractWorker } from 'tesseract.js'
 import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
@@ -47,31 +48,51 @@ async function pdfToPageCanvases(file: File, errorMessage: string): Promise<HTML
   return canvases
 }
 
+// Au-delà de ~2500px de long côté, une photo de téléphone n'apporte plus de précision
+// supplémentaire à Tesseract mais multiplie le temps de reconnaissance — on downscale.
+const MAX_IMAGE_DIMENSION = 2500
+
 async function imageFileToCanvas(file: File, errorMessage: string): Promise<HTMLCanvasElement> {
   const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height))
   const canvas = document.createElement('canvas')
-  canvas.width = bitmap.width
-  canvas.height = bitmap.height
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
   const context = canvas.getContext('2d')
   if (!context) throw new Error(errorMessage)
-  context.drawImage(bitmap, 0, 0)
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
 
-  // Étire le contraste (niveaux de gris + normalisation min/max) : les photos prises
-  // au téléphone ont souvent un éclairage inégal qui fait rater du texte à Tesseract.
+  // Étire le contraste (niveaux de gris + normalisation par percentiles 2%/98%) : les
+  // photos prises au téléphone ont souvent un éclairage inégal qui fait rater du texte
+  // à Tesseract. Les percentiles (plutôt que le min/max brut) évitent qu'un reflet ou
+  // une ombre isolée n'écrase tout l'étirement.
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
   const { data } = imageData
-  let min = 255
-  let max = 0
-  const gray = new Uint8ClampedArray(data.length / 4)
+  const pixelCount = data.length / 4
+  const gray = new Uint8ClampedArray(pixelCount)
+  const histogram = new Uint32Array(256)
   for (let i = 0; i < data.length; i += 4) {
     const g = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
     gray[i / 4] = g
-    if (g < min) min = g
-    if (g > max) max = g
+    histogram[Math.round(g)] += 1
   }
-  const range = max - min || 1
+  const lowCut = Math.floor(pixelCount * 0.02)
+  const highCut = Math.floor(pixelCount * 0.98)
+  let seen = 0
+  let low = 0
+  let high = 255
+  for (let v = 0; v < 256; v += 1) {
+    seen += histogram[v]
+    if (seen >= lowCut) { low = v; break }
+  }
+  seen = 0
+  for (let v = 255; v >= 0; v -= 1) {
+    seen += histogram[v]
+    if (seen >= pixelCount - highCut) { high = v; break }
+  }
+  const range = high - low || 1
   for (let i = 0; i < data.length; i += 4) {
-    const stretched = ((gray[i / 4] - min) / range) * 255
+    const stretched = ((gray[i / 4] - low) / range) * 255
     data[i] = stretched
     data[i + 1] = stretched
     data[i + 2] = stretched
@@ -92,6 +113,28 @@ export default function OcrPage() {
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const workerRef = useRef<Promise<TesseractWorker> | null>(null)
+  const loggerRef = useRef<(m: { status: string; progress: number }) => void>(() => {})
+
+  // Un worker Tesseract réutilisé pour tous les scans de la session : recréer un worker
+  // à chaque page (ancien comportement) rechargeait le moteur WASM + les données de
+  // langue fra+ara (plusieurs Mo) à chaque fois — c'était le vrai goulot d'étranglement,
+  // pas la reconnaissance elle-même.
+  const getWorker = useCallback(async () => {
+    if (!workerRef.current) {
+      workerRef.current = (async () => {
+        const { createWorker } = await import('tesseract.js')
+        return createWorker('fra+ara', undefined, { logger: (m) => loggerRef.current(m) })
+      })()
+    }
+    return workerRef.current
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.then((w) => w.terminate())
+    }
+  }, [])
 
   const caseOptions = [{ value: '', label: tr.ocr_no_case_option }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]
 
@@ -111,7 +154,7 @@ export default function OcrPage() {
       setProgress(0)
       setProgressLabel(tr.ocr_progress_preparing)
       try {
-        const { recognize } = await import('tesseract.js')
+        const worker = await getWorker()
         const pages = file.type === 'application/pdf'
           ? await pdfToPageCanvases(file, tr.ocr_error_pdf_page_prep)
           : [await imageFileToCanvas(file, tr.ocr_error_image_prep)]
@@ -120,15 +163,14 @@ export default function OcrPage() {
         const texts: string[] = []
         for (let i = 0; i < pages.length; i += 1) {
           if (totalPages > 1) setProgressLabel(`${tr.ocr_progress_page_prefix} ${i + 1} ${tr.ocr_progress_page_of} ${totalPages}…`)
-          const { data } = await recognize(pages[i], 'fra+ara', {
-            logger: (m) => {
-              if (m.status === 'recognizing text') {
-                setProgress(Math.round(((i + m.progress) / totalPages) * 100))
-              } else {
-                setProgressLabel(m.status)
-              }
-            },
-          })
+          loggerRef.current = (m) => {
+            if (m.status === 'recognizing text') {
+              setProgress(Math.round(((i + m.progress) / totalPages) * 100))
+            } else {
+              setProgressLabel(m.status)
+            }
+          }
+          const { data } = await worker.recognize(pages[i])
           texts.push(data.text.trim())
         }
 
@@ -155,7 +197,7 @@ export default function OcrPage() {
         setProgressLabel('')
       }
     },
-    [caseId, tr]
+    [caseId, tr, getWorker]
   )
 
   const updateScanText = (id: number, text: string) => {
@@ -305,7 +347,7 @@ export default function OcrPage() {
                     placeholder={tr.ocr_no_text_detected}
                     style={{
                       width: '100%',
-                      minHeight: 160,
+                      minHeight: 380,
                       fontSize: 13,
                       lineHeight: 1.5,
                       color: 'var(--color-foreground)',
