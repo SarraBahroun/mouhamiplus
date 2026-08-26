@@ -110,43 +110,60 @@ async function imageFileToCanvas(file: File, errorMessage: string): Promise<HTML
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   if ('close' in bitmap) bitmap.close()
 
-  // Étire le contraste (niveaux de gris + normalisation par percentiles 2%/98%) : les
-  // photos prises au téléphone ont souvent un éclairage inégal qui fait rater du texte
-  // à Tesseract. Les percentiles (plutôt que le min/max brut) évitent qu'un reflet ou
-  // une ombre isolée n'écrase tout l'étirement.
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+  binarizeForOcr(context, canvas.width, canvas.height)
+  return canvas
+}
+
+// Binarisation adaptative (Bradley/Roth, via image intégrale) : chaque pixel est
+// comparé à la moyenne de son voisinage local, pas à un seuil global. C'est ce que
+// font les applis de scan de documents — un simple étirement de contraste global ne
+// suffit pas pour une photo de téléphone (ombre d'un côté, reflet de l'autre) et
+// laissait Tesseract halluciner des caractères sans queue ni tête. Propriété utile :
+// les grandes zones uniformes (fond de table, ombre large) ressortent blanches, seuls
+// les traits localement plus sombres que leur voisinage (l'encre) ressortent noirs.
+function binarizeForOcr(context: CanvasRenderingContext2D, width: number, height: number) {
+  const imageData = context.getImageData(0, 0, width, height)
   const { data } = imageData
-  const pixelCount = data.length / 4
-  const gray = new Uint8ClampedArray(pixelCount)
-  const histogram = new Uint32Array(256)
+
+  const gray = new Uint8ClampedArray(width * height)
   for (let i = 0; i < data.length; i += 4) {
-    const g = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-    gray[i / 4] = g
-    histogram[Math.round(g)] += 1
+    gray[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
   }
-  const lowCut = Math.floor(pixelCount * 0.02)
-  const highCut = Math.floor(pixelCount * 0.98)
-  let seen = 0
-  let low = 0
-  let high = 255
-  for (let v = 0; v < 256; v += 1) {
-    seen += histogram[v]
-    if (seen >= lowCut) { low = v; break }
+
+  // Image intégrale avec une ligne/colonne de zéros en bordure pour simplifier les bords.
+  const iw = width + 1
+  const integral = new Uint32Array(iw * (height + 1))
+  for (let y = 0; y < height; y += 1) {
+    let rowSum = 0
+    for (let x = 0; x < width; x += 1) {
+      rowSum += gray[y * width + x]
+      integral[(y + 1) * iw + (x + 1)] = integral[y * iw + (x + 1)] + rowSum
+    }
   }
-  seen = 0
-  for (let v = 255; v >= 0; v -= 1) {
-    seen += histogram[v]
-    if (seen >= pixelCount - highCut) { high = v; break }
-  }
-  const range = high - low || 1
-  for (let i = 0; i < data.length; i += 4) {
-    const stretched = ((gray[i / 4] - low) / range) * 255
-    data[i] = stretched
-    data[i + 1] = stretched
-    data[i + 2] = stretched
+
+  const windowSize = Math.max(15, Math.floor(Math.max(width, height) / 60) | 1)
+  const half = windowSize >> 1
+  const threshold = 0.15
+  for (let y = 0; y < height; y += 1) {
+    const y1 = Math.max(0, y - half)
+    const y2 = Math.min(height - 1, y + half)
+    for (let x = 0; x < width; x += 1) {
+      const x1 = Math.max(0, x - half)
+      const x2 = Math.min(width - 1, x + half)
+      const area = (x2 - x1 + 1) * (y2 - y1 + 1)
+      const sum =
+        integral[(y2 + 1) * iw + (x2 + 1)] -
+        integral[y1 * iw + (x2 + 1)] -
+        integral[(y2 + 1) * iw + x1] +
+        integral[y1 * iw + x1]
+      const value = gray[y * width + x] * area < sum * (1 - threshold) ? 0 : 255
+      const p = (y * width + x) * 4
+      data[p] = value
+      data[p + 1] = value
+      data[p + 2] = value
+    }
   }
   context.putImageData(imageData, 0, 0)
-  return canvas
 }
 
 export default function OcrPage() {
@@ -162,26 +179,41 @@ export default function OcrPage() {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
-  const workerRef = useRef<Promise<TesseractWorker> | null>(null)
+  const workerRef = useRef<{ langs: string; promise: Promise<TesseractWorker> } | null>(null)
   const loggerRef = useRef<(m: { status: string; progress: number }) => void>(() => {})
+
+  // Langue du document scanné. Sur un document monolingue, restreindre Tesseract à la
+  // bonne langue améliore nettement la précision : en fra+ara sur une photo imparfaite,
+  // il pioche des caractères dans les deux alphabets et produit du charabia mêlé.
+  const [docLang, setDocLang] = useState('ara')
 
   // Un worker Tesseract réutilisé pour tous les scans de la session : recréer un worker
   // à chaque page (ancien comportement) rechargeait le moteur WASM + les données de
-  // langue fra+ara (plusieurs Mo) à chaque fois — c'était le vrai goulot d'étranglement,
-  // pas la reconnaissance elle-même.
-  const getWorker = useCallback(async () => {
-    if (!workerRef.current) {
-      workerRef.current = (async () => {
-        const { createWorker } = await import('tesseract.js')
-        return createWorker('fra+ara', undefined, { logger: (m) => loggerRef.current(m) })
-      })()
+  // langue (plusieurs Mo) à chaque fois — c'était le vrai goulot d'étranglement, pas la
+  // reconnaissance elle-même. Recréé uniquement si la langue du document change.
+  const getWorker = useCallback(async (langs: string) => {
+    if (workerRef.current && workerRef.current.langs !== langs) {
+      workerRef.current.promise.then((w) => w.terminate())
+      workerRef.current = null
     }
-    return workerRef.current
+    if (!workerRef.current) {
+      const promise = (async () => {
+        const tesseract = await import('tesseract.js')
+        const worker = await tesseract.createWorker(langs, undefined, { logger: (m) => loggerRef.current(m) })
+        // PSM AUTO : segmente la page au lieu de supposer un bloc unique — plus robuste
+        // sur les photos avec marges et fond. user_defined_dpi : un canvas n'a pas de
+        // métadonnée DPI, sans ça Tesseract estime mal la taille du texte.
+        await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.AUTO, user_defined_dpi: '300' })
+        return worker
+      })()
+      workerRef.current = { langs, promise }
+    }
+    return workerRef.current.promise
   }, [])
 
   useEffect(() => {
     return () => {
-      workerRef.current?.then((w) => w.terminate())
+      workerRef.current?.promise.then((w) => w.terminate())
     }
   }, [])
 
@@ -228,7 +260,7 @@ export default function OcrPage() {
       setProgress(0)
       setProgressLabel(tr.ocr_progress_preparing)
       try {
-        const worker = await getWorker()
+        const worker = await getWorker(docLang)
         const pdf = isPdfFile(file) ? await loadPdf(file) : null
         const totalPages = pdf ? pdf.numPages : 1
 
@@ -274,7 +306,7 @@ export default function OcrPage() {
         setProgressLabel('')
       }
     },
-    [caseId, tr, getWorker]
+    [caseId, tr, getWorker, docLang]
   )
 
   const updateScanText = (id: number, text: string) => {
@@ -325,8 +357,23 @@ export default function OcrPage() {
           </p>
         </div>
 
-        <div style={{ maxWidth: 360 }}>
-          <SelectInput label={tr.ocr_case_label} value={caseId} onChange={onGlobalCaseChange} options={caseOptions} rtl={rtl} />
+        <div className="flex gap-4 flex-wrap">
+          <div style={{ width: '100%', maxWidth: 220 }}>
+            <SelectInput
+              label={tr.ocr_doc_lang_label}
+              value={docLang}
+              onChange={setDocLang}
+              options={[
+                { value: 'ara', label: tr.ocr_doc_lang_ar },
+                { value: 'fra', label: tr.ocr_doc_lang_fr },
+                { value: 'fra+ara', label: tr.ocr_doc_lang_both },
+              ]}
+              rtl={rtl}
+            />
+          </div>
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <SelectInput label={tr.ocr_case_label} value={caseId} onChange={onGlobalCaseChange} options={caseOptions} rtl={rtl} />
+          </div>
         </div>
 
         <input
