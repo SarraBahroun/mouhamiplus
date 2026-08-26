@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
+import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 
@@ -179,12 +180,8 @@ export default function OcrPage() {
 
   const exportScanToPdf = async (scan: ScanResult) => {
     const { jsPDF } = await import('jspdf')
-    const doc = new jsPDF()
-    const content = scan.text || '(Aucun texte détecté sur ce document.)'
-    const lines = doc.splitTextToSize(content, 180)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(11)
-    doc.text(lines, 15, 20)
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+    await exportTextToPdfPages(doc, scan.text || '(Aucun texte détecté sur ce document.)')
     doc.save(`${scan.name.replace(/\.[^.]+$/, '')}-ocr.pdf`)
   }
 
