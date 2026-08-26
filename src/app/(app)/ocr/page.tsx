@@ -10,29 +10,71 @@ interface ScanResult {
   id: number
   name: string
   date: string
-  caseTitle?: string
-  excerpt: string
-  saved: boolean
+  file: File
+  pageCount: number
+  text: string
+  caseId: string
+  status: 'draft' | 'saving' | 'saved' | 'error'
+  saveError?: string
 }
 
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 const ACCEPTED_EXT = '.pdf,.jpg,.jpeg,.png'
 const MAX_SIZE = 20 * 1024 * 1024
 
-async function pdfFirstPageToCanvas(file: File): Promise<HTMLCanvasElement> {
+async function pdfToPageCanvases(file: File): Promise<HTMLCanvasElement[]> {
   const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
 
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-  const page = await pdf.getPage(1)
-  const viewport = page.getViewport({ scale: 2 })
+  const canvases: HTMLCanvasElement[] = []
+  // Numérise TOUTES les pages du PDF — un document de 2 pages ne perdait
+  // auparavant que la première moitié de son texte car seule la page 1 était lue.
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+    const page = await pdf.getPage(pageNum)
+    const viewport = page.getViewport({ scale: 2 })
+    const canvas = document.createElement('canvas')
+    canvas.width = viewport.width
+    canvas.height = viewport.height
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error("Impossible de préparer la page PDF pour la numérisation.")
+    await page.render({ canvas, canvasContext: context, viewport }).promise
+    canvases.push(canvas)
+  }
+  return canvases
+}
+
+async function imageFileToCanvas(file: File): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(file)
   const canvas = document.createElement('canvas')
-  canvas.width = viewport.width
-  canvas.height = viewport.height
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
   const context = canvas.getContext('2d')
-  if (!context) throw new Error("Impossible de préparer la page PDF pour la numérisation.")
-  await page.render({ canvas, canvasContext: context, viewport }).promise
+  if (!context) throw new Error("Impossible de préparer l'image pour la numérisation.")
+  context.drawImage(bitmap, 0, 0)
+
+  // Étire le contraste (niveaux de gris + normalisation min/max) : les photos prises
+  // au téléphone ont souvent un éclairage inégal qui fait rater du texte à Tesseract.
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+  const { data } = imageData
+  let min = 255
+  let max = 0
+  const gray = new Uint8ClampedArray(data.length / 4)
+  for (let i = 0; i < data.length; i += 4) {
+    const g = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    gray[i / 4] = g
+    if (g < min) min = g
+    if (g > max) max = g
+  }
+  const range = max - min || 1
+  for (let i = 0; i < data.length; i += 4) {
+    const stretched = ((gray[i / 4] - min) / range) * 255
+    data[i] = stretched
+    data[i + 1] = stretched
+    data[i + 2] = stretched
+  }
+  context.putImageData(imageData, 0, 0)
   return canvas
 }
 
@@ -43,9 +85,12 @@ export default function OcrPage() {
   const [scans, setScans] = useState<ScanResult[]>([])
   const [processing, setProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [progressLabel, setProgressLabel] = useState('')
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const caseOptions = [{ value: '', label: 'Aucun dossier' }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]
 
   const processFile = useCallback(
     async (file: File) => {
@@ -61,34 +106,40 @@ export default function OcrPage() {
 
       setProcessing(true)
       setProgress(0)
+      setProgressLabel('Préparation du document…')
       try {
         const { recognize } = await import('tesseract.js')
-        const source = file.type === 'application/pdf' ? await pdfFirstPageToCanvas(file) : file
+        const pages = file.type === 'application/pdf' ? await pdfToPageCanvases(file) : [await imageFileToCanvas(file)]
+        const totalPages = pages.length
 
-        const { data } = await recognize(source, 'fra+ara', {
-          logger: (m) => {
-            if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100))
-          },
-        })
-
-        const text = data.text.trim()
-        const excerpt = text ? (text.length > 240 ? `${text.slice(0, 240)}…` : text) : '(Aucun texte détecté sur ce document.)'
-        const caseTitle = initialCases.find((c) => String(c.id) === caseId)?.title
-
-        // Rattache réellement le document au dossier choisi — sans ça, le sélecteur
-        // "Dossier associé" ne faisait que décorer un résultat qui disparaissait au refresh.
-        let saved = false
-        if (caseId) {
-          const uploaded = await addCaseDocument(caseId, file)
-          if (uploaded && text) {
-            await addCaseNote(caseId, currentUserName || 'Scanner OCR', `Texte extrait par OCR (${file.name}) :\n${text}`)
-          }
-          saved = uploaded
-          if (!uploaded) setError("La numérisation a réussi mais l'ajout au dossier a échoué — réessayez.")
+        const texts: string[] = []
+        for (let i = 0; i < pages.length; i += 1) {
+          if (totalPages > 1) setProgressLabel(`Page ${i + 1} sur ${totalPages}…`)
+          const { data } = await recognize(pages[i], 'fra+ara', {
+            logger: (m) => {
+              if (m.status === 'recognizing text') {
+                setProgress(Math.round(((i + m.progress) / totalPages) * 100))
+              } else {
+                setProgressLabel(m.status)
+              }
+            },
+          })
+          texts.push(data.text.trim())
         }
 
+        const text = texts.filter(Boolean).join('\n\n').trim()
+
         setScans((prev) => [
-          { id: Date.now(), name: file.name, date: new Date().toLocaleString('fr-FR'), caseTitle, excerpt, saved },
+          {
+            id: Date.now(),
+            name: file.name,
+            date: new Date().toLocaleString('fr-FR'),
+            file,
+            pageCount: totalPages,
+            text,
+            caseId,
+            status: 'draft',
+          },
           ...prev,
         ])
       } catch (e) {
@@ -96,10 +147,46 @@ export default function OcrPage() {
       } finally {
         setProcessing(false)
         setProgress(0)
+        setProgressLabel('')
       }
     },
-    [caseId, initialCases, addCaseDocument, addCaseNote, currentUserName]
+    [caseId]
   )
+
+  const updateScanText = (id: number, text: string) => {
+    setScans((prev) => prev.map((s) => (s.id === id ? { ...s, text, status: s.status === 'saved' ? 'draft' : s.status } : s)))
+  }
+
+  const updateScanCase = (id: number, newCaseId: string) => {
+    setScans((prev) => prev.map((s) => (s.id === id ? { ...s, caseId: newCaseId, status: s.status === 'saved' ? 'draft' : s.status } : s)))
+  }
+
+  const classifyScan = async (scan: ScanResult) => {
+    if (!scan.caseId) return
+    setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'saving', saveError: undefined } : s)))
+    const uploaded = await addCaseDocument(scan.caseId, scan.file)
+    if (!uploaded) {
+      setScans((prev) =>
+        prev.map((s) => (s.id === scan.id ? { ...s, status: 'error', saveError: "L'ajout du document au dossier a échoué — réessayez." } : s))
+      )
+      return
+    }
+    if (scan.text) {
+      await addCaseNote(scan.caseId, currentUserName || 'Scanner OCR', `Texte extrait par OCR (${scan.name}) :\n${scan.text}`)
+    }
+    setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'saved' } : s)))
+  }
+
+  const exportScanToPdf = async (scan: ScanResult) => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const content = scan.text || '(Aucun texte détecté sur ce document.)'
+    const lines = doc.splitTextToSize(content, 180)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.text(lines, 15, 20)
+    doc.save(`${scan.name.replace(/\.[^.]+$/, '')}-ocr.pdf`)
+  }
 
   const openPicker = () => inputRef.current?.click()
 
@@ -119,12 +206,7 @@ export default function OcrPage() {
         </div>
 
         <div style={{ maxWidth: 360 }}>
-          <SelectInput
-            label="Dossier associé (optionnel)"
-            value={caseId}
-            onChange={setCaseId}
-            options={[{ value: '', label: 'Aucun dossier' }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]}
-          />
+          <SelectInput label="Dossier associé (optionnel)" value={caseId} onChange={setCaseId} options={caseOptions} />
         </div>
 
         <input
@@ -166,6 +248,9 @@ export default function OcrPage() {
               <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)', margin: '0 0 10px' }}>
                 Numérisation en cours… {progress > 0 ? `${progress}%` : ''}
               </p>
+              {progressLabel && (
+                <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 10px' }}>{progressLabel}</p>
+              )}
               <div style={{ width: '100%', maxWidth: 280, margin: '0 auto', height: 6, borderRadius: 3, background: 'var(--color-secondary)', overflow: 'hidden' }}>
                 <div style={{ width: `${progress}%`, height: '100%', background: 'var(--color-primary)', transition: 'width 0.2s' }} />
               </div>
@@ -200,31 +285,60 @@ export default function OcrPage() {
               Aucune numérisation pour l&apos;instant. Déposez un document ci-dessus pour commencer.
             </p>
           ) : (
-            <div style={{ border: '1px solid var(--color-border)', borderRadius: 6, overflow: 'hidden', background: 'var(--color-card)' }}>
-              {scans.map((s, i) => (
-                <div key={s.id} style={{ padding: '13px 16px', borderBottom: i < scans.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-                  <div className="flex items-center justify-between gap-3 mb-1.5">
-                    <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>{s.name}</span>
+            <div className="flex flex-col gap-4">
+              {scans.map((s) => (
+                <div key={s.id} style={{ border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-card)', padding: '14px 16px' }}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>
+                      {s.name}
+                      {s.pageCount > 1 && (
+                        <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontWeight: 400 }}> · {s.pageCount} pages</span>
+                      )}
+                    </span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>{s.date}</span>
                   </div>
-                  {s.caseTitle && (
-                    <div style={{ fontSize: 12, color: s.saved ? 'var(--color-muted-foreground)' : '#B3261E', marginBottom: 6 }}>
-                      {s.caseTitle}{s.saved ? ' · ajouté au dossier' : ' · non enregistré dans le dossier'}
-                    </div>
-                  )}
-                  <div
+
+                  <textarea
+                    value={s.text}
+                    onChange={(e) => updateScanText(s.id, e.target.value)}
+                    placeholder="(Aucun texte détecté sur ce document.)"
                     style={{
-                      fontSize: 12,
+                      width: '100%',
+                      minHeight: 160,
+                      fontSize: 13,
+                      lineHeight: 1.5,
                       color: 'var(--color-foreground)',
                       background: 'var(--color-secondary)',
+                      border: '1px solid var(--color-border)',
                       borderRadius: 4,
-                      padding: '8px 10px',
-                      fontStyle: 'italic',
-                      whiteSpace: 'pre-wrap',
+                      padding: '10px 12px',
+                      fontFamily: 'var(--font-body)',
+                      resize: 'vertical',
                     }}
-                  >
-                    &ldquo;{s.excerpt}&rdquo;
+                  />
+
+                  <div className="flex items-end justify-between gap-3 mt-3 flex-wrap">
+                    <div style={{ maxWidth: 280, width: '100%' }}>
+                      <SelectInput label="Dossier" value={s.caseId} onChange={(v) => updateScanCase(s.id, v)} options={caseOptions} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Btn variant="secondary" onClick={() => exportScanToPdf(s)}>
+                        Exporter en PDF
+                      </Btn>
+                      <Btn onClick={() => classifyScan(s)} disabled={!s.caseId || s.status === 'saving'}>
+                        {s.status === 'saved' ? 'Enregistré ✓' : s.status === 'saving' ? 'Classement…' : 'Classer dans le dossier'}
+                      </Btn>
+                    </div>
                   </div>
+
+                  {s.status === 'error' && (
+                    <div style={{ fontSize: 12, color: '#B3261E', marginTop: 8 }}>{s.saveError}</div>
+                  )}
+                  {!s.caseId && s.status !== 'saved' && (
+                    <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 8 }}>
+                      Choisissez un dossier pour pouvoir classer cette numérisation.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
