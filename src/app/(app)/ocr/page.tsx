@@ -6,6 +6,7 @@ import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
+import { transcribeDocument } from './actions'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useLang } from '@/providers/LangProvider'
 import { useSession } from '@/providers/SessionProvider'
@@ -266,39 +267,58 @@ export default function OcrPage() {
       setProgress(0)
       setProgressLabel(tr.ocr_progress_preparing)
       try {
-        const worker = await getWorker(docLang)
         const pdf = isPdfFile(file) ? await loadPdf(file) : null
         const totalPages = pdf ? pdf.numPages : 1
 
         const texts: string[] = []
         for (let i = 0; i < totalPages; i += 1) {
-          if (totalPages > 1) setProgressLabel(`${tr.ocr_progress_page_prefix} ${i + 1} ${tr.ocr_progress_page_of} ${totalPages}…`)
-          loggerRef.current = (m) => {
-            if (m.status === 'recognizing text') {
-              setProgress(Math.round(((i + m.progress) / totalPages) * 100))
-            } else {
-              setProgressLabel(m.status)
-            }
-          }
+          const pageLabel = totalPages > 1 ? `${tr.ocr_progress_page_prefix} ${i + 1} ${tr.ocr_progress_page_of} ${totalPages} — ` : ''
           const canvas = pdf
             ? await renderPdfPage(pdf, i + 1, tr.ocr_error_pdf_page_prep)
-            : await imageFileToCanvas(file, tr.ocr_error_image_prep, true)
-          const { data } = await worker.recognize(canvas)
-          releaseCanvas(canvas)
-          let pageText = data.text.trim()
+            : await imageFileToCanvas(file, tr.ocr_error_image_prep, false)
 
-          // Filet de sécurité pour les photos : si la version binarisée ne donne quasi
-          // rien (prétraitement qui a détruit l'image plutôt qu'aidé), on retente sur
-          // l'image brute et on garde le meilleur des deux résultats.
-          if (!pdf && pageText.replace(/\s/g, '').length < 10) {
-            const rawCanvas = await imageFileToCanvas(file, tr.ocr_error_image_prep, false)
-            const retry = await worker.recognize(rawCanvas)
-            releaseCanvas(rawCanvas)
-            const retryText = retry.data.text.trim()
-            if (retryText.replace(/\s/g, '').length > pageText.replace(/\s/g, '').length) {
-              pageText = retryText
+          // Moteur principal : Gemini en vision (déjà utilisé par les fonctions IA de
+          // l'app) — très supérieur à Tesseract sur l'arabe et sur les photos de
+          // téléphone. Tesseract (local) reste le secours automatique si l'appel échoue
+          // (clé absente, réseau, quota).
+          setProgressLabel(`${pageLabel}${tr.ocr_progress_ai}`)
+          setProgress(Math.round((i / totalPages) * 100))
+          let pageText: string | null = null
+          const aiResult = await transcribeDocument(canvas.toDataURL('image/jpeg', 0.85), docLang).catch(() => null)
+          if (aiResult && 'text' in aiResult && aiResult.text.trim()) {
+            pageText = aiResult.text.trim()
+          }
+
+          if (pageText === null) {
+            const worker = await getWorker(docLang)
+            loggerRef.current = (m) => {
+              if (m.status === 'recognizing text') {
+                setProgress(Math.round(((i + m.progress) / totalPages) * 100))
+              } else {
+                setProgressLabel(m.status)
+              }
+            }
+            if (!pdf) {
+              const ctx = canvas.getContext('2d')
+              if (ctx) binarizeForOcr(ctx, canvas.width, canvas.height)
+            }
+            const { data } = await worker.recognize(canvas)
+            pageText = data.text.trim()
+
+            // Filet de sécurité pour les photos : si la version binarisée ne donne quasi
+            // rien (prétraitement qui a détruit l'image plutôt qu'aidé), on retente sur
+            // l'image brute et on garde le meilleur des deux résultats.
+            if (!pdf && pageText.replace(/\s/g, '').length < 10) {
+              const rawCanvas = await imageFileToCanvas(file, tr.ocr_error_image_prep, false)
+              const retry = await worker.recognize(rawCanvas)
+              releaseCanvas(rawCanvas)
+              const retryText = retry.data.text.trim()
+              if (retryText.replace(/\s/g, '').length > pageText.replace(/\s/g, '').length) {
+                pageText = retryText
+              }
             }
           }
+          releaseCanvas(canvas)
           texts.push(pageText)
         }
         await pdf?.cleanup()
