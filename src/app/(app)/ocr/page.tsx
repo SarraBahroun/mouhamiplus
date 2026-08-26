@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Worker as TesseractWorker } from 'tesseract.js'
 import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
+import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useLang } from '@/providers/LangProvider'
@@ -24,6 +25,10 @@ interface ScanResult {
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 const ACCEPTED_EXT = '.pdf,.jpg,.jpeg,.png'
 const MAX_SIZE = 20 * 1024 * 1024
+
+// Valeur sentinelle du sélecteur de dossier : ouvre la création rapide au lieu de
+// sélectionner un dossier existant. Ne doit jamais entrer en collision avec un id réel.
+const NEW_CASE_VALUE = '__new_case__'
 
 async function pdfToPageCanvases(file: File, errorMessage: string): Promise<HTMLCanvasElement[]> {
   const pdfjsLib = await import('pdfjs-dist')
@@ -136,7 +141,32 @@ export default function OcrPage() {
     }
   }, [])
 
-  const caseOptions = [{ value: '', label: tr.ocr_no_case_option }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]
+  // null = fermé ; 'global' = sélecteur du haut ; sinon l'id du scan dont le sélecteur
+  // a demandé la création.
+  const [newCaseTarget, setNewCaseTarget] = useState<'global' | number | null>(null)
+
+  const caseOptions = [
+    { value: '', label: tr.ocr_no_case_option },
+    { value: NEW_CASE_VALUE, label: tr.case_create_option },
+    ...initialCases.map((c) => ({ value: String(c.id), label: c.title })),
+  ]
+
+  const onGlobalCaseChange = (v: string) => {
+    if (v === NEW_CASE_VALUE) {
+      setNewCaseTarget('global')
+      return
+    }
+    setCaseId(v)
+  }
+
+  const onCaseCreated = (id: string) => {
+    if (newCaseTarget === 'global') {
+      setCaseId(id)
+    } else if (newCaseTarget !== null) {
+      updateScanCase(newCaseTarget, id)
+    }
+    setNewCaseTarget(null)
+  }
 
   const processFile = useCallback(
     async (file: File) => {
@@ -249,7 +279,7 @@ export default function OcrPage() {
         </div>
 
         <div style={{ maxWidth: 360 }}>
-          <SelectInput label={tr.ocr_case_label} value={caseId} onChange={setCaseId} options={caseOptions} rtl={rtl} />
+          <SelectInput label={tr.ocr_case_label} value={caseId} onChange={onGlobalCaseChange} options={caseOptions} rtl={rtl} />
         </div>
 
         <input
@@ -362,7 +392,13 @@ export default function OcrPage() {
 
                   <div className="flex items-end justify-between gap-3 mt-3 flex-wrap">
                     <div style={{ maxWidth: 280, width: '100%' }}>
-                      <SelectInput label={tr.shell_case_file} value={s.caseId} onChange={(v) => updateScanCase(s.id, v)} options={caseOptions} rtl={rtl} />
+                      <SelectInput
+                        label={tr.shell_case_file}
+                        value={s.caseId}
+                        onChange={(v) => (v === NEW_CASE_VALUE ? setNewCaseTarget(s.id) : updateScanCase(s.id, v))}
+                        options={caseOptions}
+                        rtl={rtl}
+                      />
                     </div>
                     <div className="flex items-center gap-2">
                       <Btn variant="secondary" onClick={() => exportScanToPdf(s)}>
@@ -388,6 +424,10 @@ export default function OcrPage() {
           )}
         </div>
       </div>
+
+      {newCaseTarget !== null && (
+        <NewCaseModal onCreated={onCaseCreated} onClose={() => setNewCaseTarget(null)} />
+      )}
     </div>
   )
 }

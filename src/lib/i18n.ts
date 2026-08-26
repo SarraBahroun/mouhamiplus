@@ -7,6 +7,7 @@ import { shellDict } from './i18n/shell'
 import { agendaDict } from './i18n/agenda'
 import { aiDict } from './i18n/ai'
 import { billingDict } from './i18n/billing'
+import { caseCreateDict } from './i18n/case-create'
 import { clientPortalDict } from './i18n/client-portal'
 import { clientsDict } from './i18n/clients'
 import { dashboardDict } from './i18n/dashboard'
@@ -38,6 +39,7 @@ export const t: Record<Lang, Dict> = mergeDicts(
   agendaDict,
   aiDict,
   billingDict,
+  caseCreateDict,
   clientPortalDict,
   clientsDict,
   dashboardDict,
