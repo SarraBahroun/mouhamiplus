@@ -18,58 +18,62 @@ import {
   IconBarChart, IconTeam, IconClipboard, IconLock, IconGear, IconMenu, IconClose,
 } from '@/components/ui/icons'
 
-const SIDEBAR_NAV: { id: string; label: string; icon: React.ReactNode; section?: string; permission?: PermissionKey }[] = [
-  { id: '/dashboard', label: 'Tableau de bord', icon: <IconHome /> },
-  { id: '/messages', label: 'Messages & RDV', icon: <IconChat />, section: 'Espace client' },
-  { id: '/clients', label: 'Clients', icon: <IconUsers />, section: 'Clientèle', permission: 'manageClients' },
-  { id: '/cases', label: 'Dossiers', icon: <IconFolder />, section: 'Clientèle', permission: 'createCase' },
-  { id: '/hearings', label: 'Audiences', icon: <IconScale />, section: 'Agenda', permission: 'manageCalendar' },
-  { id: '/calendar', label: 'Calendrier', icon: <IconCalendar />, section: 'Agenda', permission: 'manageCalendar' },
-  { id: '/documents', label: 'Documents', icon: <IconArchive />, section: 'Documents & IA', permission: 'manageDocuments' },
-  { id: '/ocr', label: 'Scanner OCR', icon: <IconCamera />, section: 'Documents & IA', permission: 'manageDocuments' },
-  { id: '/search', label: 'Recherche', icon: <IconSearch />, section: 'Documents & IA' },
-  { id: '/ai/generate', label: 'Génération IA', icon: <IconSparkle />, section: 'Documents & IA', permission: 'useAiTools' },
-  { id: '/ai/summary', label: 'Résumé automatique', icon: <IconReceipt />, section: 'Documents & IA', permission: 'useAiTools' },
-  { id: '/ai/assistant', label: 'Assistant juridique IA', icon: <IconBot />, section: 'Documents & IA', permission: 'useAiTools' },
-  { id: '/contracts', label: 'Contrats', icon: <IconScroll />, section: 'Facturation', permission: 'viewPayments' },
-  { id: '/correspondence', label: 'Courriers', icon: <IconMail />, section: 'Facturation', permission: 'viewPayments' },
-  { id: '/invoices', label: 'Factures', icon: <IconInvoice />, section: 'Facturation', permission: 'viewPayments' },
-  { id: '/payments', label: 'Paiements', icon: <IconCreditCard />, section: 'Facturation', permission: 'viewPayments' },
-  { id: '/reports', label: 'Rapports', icon: <IconBarChart />, section: 'Pilotage', permission: 'viewPayments' },
-  { id: '/members', label: 'Membres', icon: <IconTeam />, section: 'Cabinet', permission: 'manageUsers' },
-  { id: '/members/audit', label: "Journal d'audit", icon: <IconClipboard />, section: 'Cabinet', permission: 'manageUsers' },
-  { id: '/sessions', label: 'Sessions actives', icon: <IconLock />, section: 'Compte' },
-  { id: '/settings', label: 'Paramètres', icon: <IconGear />, section: 'Compte', permission: 'accessSettings' },
-]
+function buildSidebarNav(tr: Record<string, string>): { id: string; label: string; icon: React.ReactNode; section?: string; permission?: PermissionKey }[] {
+  return [
+    { id: '/dashboard', label: tr.nav_dashboard, icon: <IconHome /> },
+    { id: '/messages', label: tr.nav_messages, icon: <IconChat />, section: tr.section_client_space },
+    { id: '/clients', label: tr.nav_clients, icon: <IconUsers />, section: tr.section_clientele, permission: 'manageClients' },
+    { id: '/cases', label: tr.nav_cases, icon: <IconFolder />, section: tr.section_clientele, permission: 'createCase' },
+    { id: '/hearings', label: tr.nav_hearings, icon: <IconScale />, section: tr.section_agenda, permission: 'manageCalendar' },
+    { id: '/calendar', label: tr.nav_calendar, icon: <IconCalendar />, section: tr.section_agenda, permission: 'manageCalendar' },
+    { id: '/documents', label: tr.nav_documents, icon: <IconArchive />, section: tr.section_documents_ai, permission: 'manageDocuments' },
+    { id: '/ocr', label: tr.nav_ocr, icon: <IconCamera />, section: tr.section_documents_ai, permission: 'manageDocuments' },
+    { id: '/search', label: tr.nav_search, icon: <IconSearch />, section: tr.section_documents_ai },
+    { id: '/ai/generate', label: tr.nav_ai_generate, icon: <IconSparkle />, section: tr.section_documents_ai, permission: 'useAiTools' },
+    { id: '/ai/summary', label: tr.nav_ai_summary, icon: <IconReceipt />, section: tr.section_documents_ai, permission: 'useAiTools' },
+    { id: '/ai/assistant', label: tr.nav_ai_assistant, icon: <IconBot />, section: tr.section_documents_ai, permission: 'useAiTools' },
+    { id: '/contracts', label: tr.nav_contracts, icon: <IconScroll />, section: tr.section_billing, permission: 'viewPayments' },
+    { id: '/correspondence', label: tr.nav_correspondence, icon: <IconMail />, section: tr.section_billing, permission: 'viewPayments' },
+    { id: '/invoices', label: tr.nav_invoices, icon: <IconInvoice />, section: tr.section_billing, permission: 'viewPayments' },
+    { id: '/payments', label: tr.nav_payments, icon: <IconCreditCard />, section: tr.section_billing, permission: 'viewPayments' },
+    { id: '/reports', label: tr.nav_reports, icon: <IconBarChart />, section: tr.section_reporting, permission: 'viewPayments' },
+    { id: '/members', label: tr.nav_members, icon: <IconTeam />, section: tr.section_firm, permission: 'manageUsers' },
+    { id: '/members/audit', label: tr.nav_audit, icon: <IconClipboard />, section: tr.section_firm, permission: 'manageUsers' },
+    { id: '/sessions', label: tr.nav_sessions, icon: <IconLock />, section: tr.section_account },
+    { id: '/settings', label: tr.nav_settings, icon: <IconGear />, section: tr.section_account, permission: 'accessSettings' },
+  ]
+}
 
-const BREADCRUMBS: Record<string, string[]> = {
-  '/dashboard': ['Tableau de bord'],
-  '/messages': ['Messages & RDV'],
-  '/clients': ['Clients'],
-  '/clients/add': ['Clients', 'Nouveau client'],
-  '/cases': ['Dossiers'],
-  '/cases/add': ['Dossiers', 'Nouveau dossier'],
-  '/hearings': ['Audiences'],
-  '/calendar': ['Calendrier'],
-  '/documents': ['Documents'],
-  '/ocr': ['Scanner OCR'],
-  '/search': ['Recherche'],
-  '/ai/generate': ['Documents & IA', 'Génération de documents'],
-  '/ai/summary': ['Documents & IA', 'Résumé automatique'],
-  '/ai/assistant': ['Documents & IA', 'Assistant juridique IA'],
-  '/contracts': ['Contrats'],
-  '/correspondence': ['Courriers'],
-  '/invoices': ['Factures'],
-  '/payments': ['Paiements'],
-  '/reports': ['Rapports'],
-  '/sessions': ['Compte', 'Sessions actives'],
-  '/settings': ['Compte', 'Paramètres'],
-  '/members': ['Membres du cabinet'],
-  '/members/add': ['Membres du cabinet', 'Ajouter un membre'],
-  '/members/add/secretary': ['Membres du cabinet', 'Ajouter un membre', 'Secrétaire'],
-  '/members/add/collaborator': ['Membres du cabinet', 'Ajouter un membre', 'Collaborateur'],
-  '/members/add/intern': ['Membres du cabinet', 'Ajouter un membre', 'Stagiaire'],
-  '/members/audit': ['Cabinet', "Journal d'audit"],
+function buildBreadcrumbs(tr: Record<string, string>): Record<string, string[]> {
+  return {
+    '/dashboard': [tr.nav_dashboard],
+    '/messages': [tr.nav_messages],
+    '/clients': [tr.nav_clients],
+    '/clients/add': [tr.nav_clients, tr.shell_new_client],
+    '/cases': [tr.nav_cases],
+    '/cases/add': [tr.nav_cases, tr.shell_new_case],
+    '/hearings': [tr.nav_hearings],
+    '/calendar': [tr.nav_calendar],
+    '/documents': [tr.nav_documents],
+    '/ocr': [tr.nav_ocr],
+    '/search': [tr.nav_search],
+    '/ai/generate': [tr.section_documents_ai, tr.shell_document_generation],
+    '/ai/summary': [tr.section_documents_ai, tr.nav_ai_summary],
+    '/ai/assistant': [tr.section_documents_ai, tr.nav_ai_assistant],
+    '/contracts': [tr.nav_contracts],
+    '/correspondence': [tr.nav_correspondence],
+    '/invoices': [tr.nav_invoices],
+    '/payments': [tr.nav_payments],
+    '/reports': [tr.nav_reports],
+    '/sessions': [tr.section_account, tr.nav_sessions],
+    '/settings': [tr.section_account, tr.nav_settings],
+    '/members': [tr.shell_firm_members],
+    '/members/add': [tr.shell_firm_members, tr.shell_new_member],
+    '/members/add/secretary': [tr.shell_firm_members, tr.shell_new_member, tr.shell_secretary],
+    '/members/add/collaborator': [tr.shell_firm_members, tr.shell_new_member, tr.shell_collaborator],
+    '/members/add/intern': [tr.shell_firm_members, tr.shell_new_member, tr.shell_intern],
+    '/members/audit': [tr.section_firm, tr.nav_audit],
+  }
 }
 
 const BACK_FLOW: Record<string, string> = {
@@ -86,19 +90,20 @@ const MEMBER_PERMISSIONS_RE = /^\/members\/[^/]+\/permissions$/
 const CLIENT_PROFILE_RE = /^\/clients\/([^/]+)$/
 const CASE_DETAIL_RE = /^\/cases\/([^/]+)$/
 
-function getBreadcrumb(pathname: string, clients: Client[], cases: Case[]): string[] {
-  if (BREADCRUMBS[pathname]) return BREADCRUMBS[pathname]
-  if (MEMBER_PERMISSIONS_RE.test(pathname)) return ['Membres du cabinet', 'Permissions']
-  if (MEMBER_PROFILE_RE.test(pathname)) return ['Membres du cabinet', 'Profil membre']
+function getBreadcrumb(pathname: string, clients: Client[], cases: Case[], tr: Record<string, string>): string[] {
+  const breadcrumbs = buildBreadcrumbs(tr)
+  if (breadcrumbs[pathname]) return breadcrumbs[pathname]
+  if (MEMBER_PERMISSIONS_RE.test(pathname)) return [tr.shell_firm_members, tr.shell_permissions]
+  if (MEMBER_PROFILE_RE.test(pathname)) return [tr.shell_firm_members, tr.shell_member_profile]
   const clientMatch = pathname.match(CLIENT_PROFILE_RE)
   if (clientMatch) {
     const client = clients.find((c) => c.id === clientMatch[1])
-    return ['Clients', client?.name ?? 'Fiche client']
+    return [tr.nav_clients, client?.name ?? tr.shell_client_file]
   }
   const caseMatch = pathname.match(CASE_DETAIL_RE)
   if (caseMatch) {
     const c = cases.find((x) => x.id === caseMatch[1])
-    return ['Dossiers', c?.title ?? 'Dossier']
+    return [tr.nav_cases, c?.title ?? tr.shell_case_file]
   }
   return []
 }
@@ -114,16 +119,16 @@ function getBackTarget(pathname: string): string | undefined {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { lang, setLang } = useLang()
+  const { lang, setLang, tr, rtl } = useLang()
   const { toast } = useToast()
   const { clients, cases, members, appointmentRequests } = useAppData()
   const { currentUserId, setCurrentUserId, currentUserName, currentUserRoleLabel, currentUserInitials, hasPermission, realProfile, cabinetName, signOut } = useSession()
   const pendingRequestCount = appointmentRequests.filter((r) => r.status === 'pending').length
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const visibleNav = SIDEBAR_NAV.filter((n) => !n.permission || hasPermission(n.permission))
+  const visibleNav = buildSidebarNav(tr).filter((n) => !n.permission || hasPermission(n.permission))
   const sections = Array.from(new Set(visibleNav.filter((n) => n.section).map((n) => n.section as string)))
-  const breadcrumb = getBreadcrumb(pathname, clients, cases)
+  const breadcrumb = getBreadcrumb(pathname, clients, cases, tr)
   const backTarget = getBackTarget(pathname)
 
   const groupedNav = [
@@ -132,12 +137,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   ]
 
   const viewAsOptions: { id: CurrentUserId; label: string }[] = [
-    { id: 'self', label: realProfile ? `Me. ${realProfile.firstName} ${realProfile.lastName} (${ROLE_META[realProfile.role].label})` : 'Moi' },
+    { id: 'self', label: realProfile ? `${tr.shell_maitre} ${realProfile.firstName} ${realProfile.lastName} (${ROLE_META[realProfile.role].label})` : tr.shell_me },
     ...members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName} (${ROLE_META[m.role].label})` })),
   ]
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-background)' }}>
+    <div dir={rtl ? 'rtl' : 'ltr'} style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-background)' }}>
       {/* Backdrop (mobile only) */}
       {sidebarOpen && (
         <div
@@ -149,18 +154,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : (rtl ? 'translate-x-full' : '-translate-x-full')}`}
         style={{
           width: 220,
           flexShrink: 0,
           background: 'var(--color-card)',
-          borderRight: '1px solid var(--color-border)',
+          borderRight: rtl ? 'none' : '1px solid var(--color-border)',
+          borderLeft: rtl ? '1px solid var(--color-border)' : 'none',
           display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
           top: 0,
           bottom: 0,
-          left: 0,
+          left: rtl ? 'auto' : 0,
+          right: rtl ? 0 : 'auto',
           zIndex: 30,
           transition: 'transform 0.2s ease',
         }}
@@ -170,7 +177,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div>
             <Logo size="sm" />
             <p style={{ margin: '6px 0 0', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', letterSpacing: '0.04em' }}>
-              {cabinetName ?? 'Mon cabinet'}
+              {cabinetName ?? tr.shell_my_firm}
             </p>
           </div>
           <button
@@ -213,7 +220,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       fontSize: 13,
                       fontFamily: 'var(--font-body)',
                       fontWeight: isActive ? 600 : 400,
-                      textAlign: 'left',
+                      textAlign: 'start',
                       transition: 'background 0.12s, color 0.12s',
                     }}
                     onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(22, 35, 63,0.04)' }}
@@ -224,7 +231,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     {item.id === '/messages' && pendingRequestCount > 0 ? (
                       <span
                         style={{
-                          marginLeft: 'auto',
+                          marginInlineStart: 'auto',
                           fontSize: 10,
                           fontFamily: 'var(--font-mono)',
                           fontWeight: 700,
@@ -239,7 +246,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </span>
                     ) : (
                       isActive && (
-                        <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0 }} />
+                        <span style={{ marginInlineStart: 'auto', width: 4, height: 4, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0 }} />
                       )
                     )}
                   </button>
@@ -264,7 +271,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <select
               value={String(currentUserId)}
               onChange={(e) => setCurrentUserId(e.target.value)}
-              title="Voir en tant que"
+              title={tr.shell_view_as}
               style={{
                 width: '100%',
                 marginBottom: 10,
@@ -289,7 +296,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <LangSelector lang={lang} setLang={setLang} />
             <button
               onClick={() => { signOut(); router.push('/login') }}
-              title="Déconnexion"
+              title={tr.shell_logout}
               style={{
                 background: 'none',
                 border: '1px solid var(--color-border)',
@@ -302,14 +309,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 transition: 'color 0.12s',
               }}
             >
-              Déconnexion
+              {tr.shell_logout}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main area */}
-      <div className="lg:ml-[220px]" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 }}>
+      <div className={rtl ? 'lg:mr-[220px]' : 'lg:ml-[220px]'} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 }}>
         {/* Top bar */}
         <header
           style={{
@@ -354,10 +361,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-primary)')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'var(--color-muted-foreground)')}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ transform: rtl ? 'scaleX(-1)' : 'none' }}>
                 <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
-              Retour
+              {tr.shell_back}
             </button>
           )}
           {backTarget && <div style={{ width: 1, height: 16, background: 'var(--color-border)' }} />}

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { Lang, t } from '@/lib/i18n'
 
 interface LangContextValue {
@@ -12,8 +12,30 @@ interface LangContextValue {
 
 const LangContext = createContext<LangContextValue | null>(null)
 
+const STORAGE_KEY = 'mouhamiplus_lang'
+
+// Les avocats tunisiens travaillent principalement en arabe — c'est la langue par défaut,
+// pas une simple option parmi d'autres.
+const DEFAULT_LANG: Lang = 'ar'
+
+function readStoredLang(): Lang {
+  if (typeof window === 'undefined') return DEFAULT_LANG
+  const saved = window.localStorage.getItem(STORAGE_KEY)
+  return saved === 'fr' || saved === 'ar' || saved === 'en' ? saved : DEFAULT_LANG
+}
+
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>('fr')
+  const [lang, setLangState] = useState<Lang>(readStoredLang)
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+  }, [lang])
+
+  const setLang = (l: Lang) => {
+    setLangState(l)
+    window.localStorage.setItem(STORAGE_KEY, l)
+  }
 
   const value: LangContextValue = {
     lang,

@@ -53,7 +53,7 @@ const EXTRA_WIDE_SCREENS = ['/acceder', '/register/plan']
 export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { lang, setLang, rtl } = useLang()
+  const { lang, setLang, rtl, tr } = useLang()
 
   const backTarget = AUTH_FLOW_BACK[pathname]
   const stepData = SCREEN_STEPS[pathname]
@@ -112,7 +112,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => router.push('/')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
-            aria-label="Retour à l'accueil"
+            aria-label={tr.shell_home_aria}
           >
             <Logo size="sm" />
           </button>
@@ -159,7 +159,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           gap: 16,
         }}
       >
-        {['Conditions', 'Confidentialité', 'Support'].map((item) => (
+        {[tr.shell_footer_terms, tr.shell_footer_privacy, tr.shell_footer_support].map((item) => (
           <button
             key={item}
             style={{
