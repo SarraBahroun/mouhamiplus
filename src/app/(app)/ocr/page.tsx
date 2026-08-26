@@ -97,7 +97,7 @@ async function decodeImage(file: File, errorMessage: string): Promise<ImageBitma
   }
 }
 
-async function imageFileToCanvas(file: File, errorMessage: string): Promise<HTMLCanvasElement> {
+async function imageFileToCanvas(file: File, errorMessage: string, binarize: boolean): Promise<HTMLCanvasElement> {
   const bitmap = await decodeImage(file, errorMessage)
   const srcWidth = 'naturalWidth' in bitmap ? bitmap.naturalWidth : bitmap.width
   const srcHeight = 'naturalHeight' in bitmap ? bitmap.naturalHeight : bitmap.height
@@ -110,7 +110,7 @@ async function imageFileToCanvas(file: File, errorMessage: string): Promise<HTML
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   if ('close' in bitmap) bitmap.close()
 
-  binarizeForOcr(context, canvas.width, canvas.height)
+  if (binarize) binarizeForOcr(context, canvas.width, canvas.height)
   return canvas
 }
 
@@ -141,7 +141,11 @@ function binarizeForOcr(context: CanvasRenderingContext2D, width: number, height
     }
   }
 
-  const windowSize = Math.max(15, Math.floor(Math.max(width, height) / 60) | 1)
+  // Fenêtre = 1/8 du grand côté (paramètre canonique de Bradley). Une fenêtre trop
+  // petite (essayée à 1/60) tient entière DANS un trait épais : la moyenne locale y vaut
+  // le trait lui-même, l'intérieur des lettres ressortait blanc — lettres creuses,
+  // Tesseract ne détectait plus rien du tout.
+  const windowSize = Math.max(31, Math.floor(Math.max(width, height) / 8) | 1)
   const half = windowSize >> 1
   const threshold = 0.15
   for (let y = 0; y < height; y += 1) {
@@ -200,10 +204,12 @@ export default function OcrPage() {
       const promise = (async () => {
         const tesseract = await import('tesseract.js')
         const worker = await tesseract.createWorker(langs, undefined, { logger: (m) => loggerRef.current(m) })
-        // PSM AUTO : segmente la page au lieu de supposer un bloc unique — plus robuste
-        // sur les photos avec marges et fond. user_defined_dpi : un canvas n'a pas de
-        // métadonnée DPI, sans ça Tesseract estime mal la taille du texte.
-        await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.AUTO, user_defined_dpi: '300' })
+        // SINGLE_BLOCK : une photo de document = un bloc de texte — c'est le mode qui
+        // marchait sur PC (défaut implicite de l'API) ; AUTO échouait parfois à trouver
+        // le moindre bloc sur les photos et renvoyait un résultat vide. user_defined_dpi :
+        // un canvas n'a pas de métadonnée DPI, sans ça Tesseract estime mal la taille du
+        // texte.
+        await worker.setParameters({ tessedit_pageseg_mode: tesseract.PSM.SINGLE_BLOCK, user_defined_dpi: '300' })
         return worker
       })()
       workerRef.current = { langs, promise }
@@ -276,10 +282,24 @@ export default function OcrPage() {
           }
           const canvas = pdf
             ? await renderPdfPage(pdf, i + 1, tr.ocr_error_pdf_page_prep)
-            : await imageFileToCanvas(file, tr.ocr_error_image_prep)
+            : await imageFileToCanvas(file, tr.ocr_error_image_prep, true)
           const { data } = await worker.recognize(canvas)
           releaseCanvas(canvas)
-          texts.push(data.text.trim())
+          let pageText = data.text.trim()
+
+          // Filet de sécurité pour les photos : si la version binarisée ne donne quasi
+          // rien (prétraitement qui a détruit l'image plutôt qu'aidé), on retente sur
+          // l'image brute et on garde le meilleur des deux résultats.
+          if (!pdf && pageText.replace(/\s/g, '').length < 10) {
+            const rawCanvas = await imageFileToCanvas(file, tr.ocr_error_image_prep, false)
+            const retry = await worker.recognize(rawCanvas)
+            releaseCanvas(rawCanvas)
+            const retryText = retry.data.text.trim()
+            if (retryText.replace(/\s/g, '').length > pageText.replace(/\s/g, '').length) {
+              pageText = retryText
+            }
+          }
+          texts.push(pageText)
         }
         await pdf?.cleanup()
 
