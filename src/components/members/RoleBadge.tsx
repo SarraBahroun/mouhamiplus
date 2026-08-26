@@ -1,6 +1,8 @@
 import { MemberRole, ROLE_META } from '@/lib/members-data'
+import { useLang } from '@/providers/LangProvider'
 
 export function RoleBadge({ role, size = 'sm' }: { role: MemberRole; size?: 'sm' | 'md' }) {
+  const { lang } = useLang()
   const m = ROLE_META[role]
   return (
     <span
@@ -15,7 +17,7 @@ export function RoleBadge({ role, size = 'sm' }: { role: MemberRole; size?: 'sm'
         whiteSpace: 'nowrap',
       }}
     >
-      {m.label}
+      {m.label[lang]}
     </span>
   )
 }

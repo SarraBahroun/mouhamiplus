@@ -9,12 +9,14 @@ import { Btn } from '@/components/ui/Btn'
 import { InviteList, InviteRow } from '@/components/onboarding/InviteList'
 import { sendInvites } from '@/lib/invite-rows'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 import { REGISTER_INDIVIDUAL_STORAGE_KEY } from '../storageKey'
 import { registerIndividual } from '../actions'
 
 export default function RegisterIndividualTeamPage() {
   const router = useRouter()
   const { showToast } = useToast()
+  const { tr } = useLang()
   const [secretaryCount, setSecretaryCount] = useState(1)
   const [inviteNow, setInviteNow] = useState(true)
   const [rows, setRows] = useState<InviteRow[]>([{ id: 1, name: '', email: '', role: 'secretary' }])
@@ -28,6 +30,7 @@ export default function RegisterIndividualTeamPage() {
   }, [router])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronise le nombre de lignes d'invitation avec le stepper, pas une lecture ponctuelle au montage
     setRows((prev) => {
       if (secretaryCount === prev.length) return prev
       if (secretaryCount > prev.length) {
@@ -76,9 +79,14 @@ export default function RegisterIndividualTeamPage() {
     if (inviteNow && rows.some((r) => r.name.trim() && r.email.trim())) {
       const { sent, failed } = await sendInvites(rows)
       if (failed.length) {
-        showToast(`${sent} invitation(s) envoyée(s), ${failed.length} échec(s) : ${failed.join(', ')}`)
+        showToast(
+          tr.toast_invites_partial
+            .replace('{sent}', String(sent))
+            .replace('{failed}', String(failed.length))
+            .replace('{list}', failed.join(', '))
+        )
       } else if (sent) {
-        showToast(`${sent} invitation(s) envoyée(s).`)
+        showToast(tr.toast_invites_success.replace('{n}', String(sent)))
       }
     }
 
@@ -91,22 +99,22 @@ export default function RegisterIndividualTeamPage() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: '0 0 4px' }}>
-            Votre équipe
+            {tr.team_page_title}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>Étape 3 sur 3 — Secrétariat</p>
+          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>{tr.team_step_caption}</p>
         </div>
 
         <Stepper
-          label="Combien de secrétaires souhaitez-vous ajouter ?"
+          label={tr.team_stepper_label}
           value={secretaryCount}
           onChange={setSecretaryCount}
-          hint="Vous pourrez en ajouter d'autres plus tard"
+          hint={tr.team_stepper_hint}
         />
 
-        <Divider text="INVITATION" />
+        <Divider text={tr.invite_divider} />
 
         <div className="flex gap-2" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
-          {[{ id: true, label: 'Inviter maintenant' }, { id: false, label: 'Plus tard' }].map((opt) => (
+          {[{ id: true, label: tr.invite_now }, { id: false, label: tr.invite_later }].map((opt) => (
             <button
               key={String(opt.id)}
               onClick={() => setInviteNow(opt.id)}
@@ -133,8 +141,8 @@ export default function RegisterIndividualTeamPage() {
           <InviteList
             rows={rows}
             setRows={setRows}
-            roleOptions={[{ value: 'secretary', label: 'Secrétaire' }]}
-            addLabel="+ Ajouter une secrétaire"
+            roleOptions={[{ value: 'secretary', label: tr.role_secretary }]}
+            addLabel={tr.add_secretary_label}
           />
         )}
 
@@ -143,8 +151,8 @@ export default function RegisterIndividualTeamPage() {
         )}
 
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Créer mon compte'}</Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/individual/firm')}>Retour</Btn>
+          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : tr.create_account}</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/individual/firm')}>{tr.back}</Btn>
         </div>
       </div>
     </Card>

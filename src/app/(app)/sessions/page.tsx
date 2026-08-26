@@ -87,7 +87,7 @@ export default function SessionsPage() {
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          Supabase ne permet pas encore de lister les autres appareils connectés depuis le navigateur — seule votre session actuelle est affichée ici.
+          {tr.sessions_device_list_note}
         </p>
 
         <Btn fullWidth variant="secondary" onClick={disconnect}>

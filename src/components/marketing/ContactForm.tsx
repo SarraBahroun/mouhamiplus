@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { sendContactMessage, type ContactFormState } from '@/app/(marketing)/actions'
+import { useLang } from '@/providers/LangProvider'
 import { TYPE } from './theme'
 
 // Une constante objet ne peut pas être exportée depuis un fichier 'use server' (seules les
@@ -30,6 +31,7 @@ const labelStyle: React.CSSProperties = {
 }
 
 export function ContactForm() {
+  const { tr } = useLang()
   const [state, formAction, pending] = useActionState(sendContactMessage, initialContactFormState)
 
   return (
@@ -46,10 +48,10 @@ export function ContactForm() {
     >
       <div>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: TYPE.cardTitle, fontWeight: 600, margin: '0 0 4px', color: 'var(--color-cream)' }}>
-          Écrivez-nous
+          {tr.mk_contact_form_title}
         </h3>
         <p style={{ fontSize: TYPE.small, color: 'var(--color-sky-soft)', margin: 0 }}>
-          Réponse sous 24h, du lundi au vendredi.
+          {tr.mk_contact_form_sub}
         </p>
       </div>
 
@@ -65,17 +67,17 @@ export function ContactForm() {
         />
 
         <div>
-          <label htmlFor="contact-name" style={labelStyle}>Nom</label>
+          <label htmlFor="contact-name" style={labelStyle}>{tr.common_name}</label>
           <input id="contact-name" name="name" type="text" required maxLength={120} style={inputStyle} disabled={pending} />
         </div>
 
         <div>
-          <label htmlFor="contact-email" style={labelStyle}>E-mail</label>
+          <label htmlFor="contact-email" style={labelStyle}>{tr.common_email}</label>
           <input id="contact-email" name="email" type="email" required maxLength={200} style={inputStyle} disabled={pending} />
         </div>
 
         <div>
-          <label htmlFor="contact-message" style={labelStyle}>Message</label>
+          <label htmlFor="contact-message" style={labelStyle}>{tr.mk_contact_form_message_label}</label>
           <textarea
             id="contact-message"
             name="message"
@@ -102,7 +104,7 @@ export function ContactForm() {
             opacity: pending ? 0.7 : 1,
           }}
         >
-          {pending ? 'Envoi…' : 'Envoyer'}
+          {pending ? tr.mk_contact_form_sending : tr.common_send}
         </button>
 
         {state.status !== 'idle' && (

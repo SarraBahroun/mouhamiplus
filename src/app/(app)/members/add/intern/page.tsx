@@ -9,11 +9,13 @@ import { RoleBadge } from '@/components/members/RoleBadge'
 import { BaseMemberFields, MemberFormFields } from '@/components/members/BaseMemberFields'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MembersFormInternPage() {
   const router = useRouter()
   const { showToast } = useToast()
   const { addMember, members } = useAppData()
+  const { tr } = useLang()
   const [form, setForm] = useState<MemberFormFields>({ firstName: '', lastName: '', email: '', phone: '' })
   const [supervisorId, setSupervisorId] = useState('')
   const [error, setError] = useState('')
@@ -29,7 +31,7 @@ export default function MembersFormInternPage() {
       return
     }
     sessionStorage.setItem(`mouhamiplus-member-access-${result.id}`, JSON.stringify({ tempPassword: result.tempPassword }))
-    showToast(result.emailed ? 'Compte créé — identifiants envoyés par e-mail' : 'Compte créé — mot de passe temporaire disponible sur la fiche du membre')
+    showToast(result.emailed ? tr.member_add_toast_emailed : tr.member_add_toast_temp_password)
     router.push(`/members/${result.id}`)
   }
 
@@ -39,7 +41,7 @@ export default function MembersFormInternPage() {
         <div className="flex items-center gap-3">
           <RoleBadge role="intern" size="md" />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: 0 }}>
-            Création stagiaire
+            {tr.member_add_intern_title}
           </h1>
         </div>
 
@@ -58,18 +60,18 @@ export default function MembersFormInternPage() {
             <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3a1 1 0 110 2 1 1 0 010-2zm-1 4h2v4H7V8z" />
           </svg>
           <span style={{ fontSize: 12, color: '#E65100', fontWeight: 500 }}>
-            Supervision requise — un avocat responsable doit être désigné.
+            {tr.member_intern_supervision_warning}
           </span>
         </div>
 
         <BaseMemberFields form={form} setForm={setForm} />
 
         <SelectInput
-          label="Avocat superviseur *"
+          label={tr.member_intern_supervisor_label}
           value={supervisorId}
           onChange={setSupervisorId}
           options={[
-            { value: '', label: '— Sélectionner un superviseur —' },
+            { value: '', label: tr.member_intern_supervisor_placeholder },
             ...supervisors.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })),
           ]}
         />
@@ -78,9 +80,9 @@ export default function MembersFormInternPage() {
 
         <div className="flex flex-col gap-2">
           <Btn fullWidth disabled={!supervisorId || loading} onClick={submit}>
-            {loading ? '…' : 'Créer le compte stagiaire'}
+            {loading ? '…' : tr.member_create_intern_button}
           </Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>Retour</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>{tr.shell_back}</Btn>
         </div>
       </div>
     </Card>

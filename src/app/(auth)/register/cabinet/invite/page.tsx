@@ -7,14 +7,8 @@ import { Btn } from '@/components/ui/Btn'
 import { InviteList, InviteRow } from '@/components/onboarding/InviteList'
 import { sendInvites } from '@/lib/invite-rows'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 import { REGISTER_CABINET_TEAM_COUNTS_KEY, RegisterCabinetTeamCounts } from '../teamCountsKey'
-
-const ROLE_OPTIONS = [
-  { value: 'owner', label: 'Avocat associé' },
-  { value: 'collaborator', label: 'Avocat collaborateur' },
-  { value: 'secretary', label: 'Secrétaire' },
-  { value: 'intern', label: 'Stagiaire' },
-]
 
 const DEFAULT_ROWS: InviteRow[] = [{ id: 1, name: '', email: '', role: 'collaborator' }]
 
@@ -30,6 +24,13 @@ function rowsFromTeamCounts(counts: RegisterCabinetTeamCounts): InviteRow[] {
 export default function RegisterCabinetInvitePage() {
   const router = useRouter()
   const { showToast } = useToast()
+  const { tr } = useLang()
+  const ROLE_OPTIONS = [
+    { value: 'owner', label: tr.role_owner },
+    { value: 'collaborator', label: tr.role_collaborator },
+    { value: 'secretary', label: tr.role_secretary },
+    { value: 'intern', label: tr.role_intern },
+  ]
   const [inviteNow, setInviteNow] = useState(true)
   const [rows, setRows] = useState<InviteRow[]>(DEFAULT_ROWS)
   const [loading, setLoading] = useState(false)
@@ -54,7 +55,7 @@ export default function RegisterCabinetInvitePage() {
       const filled = rows.filter((r) => r.name.trim() && r.email.trim())
       const missingSupervisor = filled.some((r) => r.role === 'intern' && !r.supervisorRowId)
       if (missingSupervisor) {
-        setError('Merci de désigner un superviseur pour chaque stagiaire.')
+        setError(tr.supervisor_missing_error)
         return
       }
       if (filled.length) {
@@ -62,9 +63,14 @@ export default function RegisterCabinetInvitePage() {
         const { sent, failed } = await sendInvites(rows)
         setLoading(false)
         if (failed.length) {
-          showToast(`${sent} invitation(s) envoyée(s), ${failed.length} échec(s) : ${failed.join(', ')}`)
+          showToast(
+            tr.toast_invites_partial
+              .replace('{sent}', String(sent))
+              .replace('{failed}', String(failed.length))
+              .replace('{list}', failed.join(', '))
+          )
         } else if (sent) {
-          showToast(`${sent} invitation(s) envoyée(s).`)
+          showToast(tr.toast_invites_success.replace('{n}', String(sent)))
         }
       }
     }
@@ -76,13 +82,13 @@ export default function RegisterCabinetInvitePage() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: '0 0 4px' }}>
-            Invitation des membres
+            {tr.cabinvite_title}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>Étape 3 sur 3 — Votre équipe</p>
+          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>{tr.cabinvite_step_caption}</p>
         </div>
 
         <div className="flex gap-2" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
-          {[{ id: true, label: 'Inviter maintenant' }, { id: false, label: 'Plus tard' }].map((opt) => (
+          {[{ id: true, label: tr.invite_now }, { id: false, label: tr.invite_later }].map((opt) => (
             <button
               key={String(opt.id)}
               onClick={() => setInviteNow(opt.id)}
@@ -112,8 +118,8 @@ export default function RegisterCabinetInvitePage() {
         {error && <p style={{ fontSize: 13, color: 'var(--color-error)', margin: 0 }}>{error}</p>}
 
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Continuer'}</Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/cabinet/team')}>Retour</Btn>
+          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : tr.continue}</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/cabinet/team')}>{tr.back}</Btn>
         </div>
       </div>
     </Card>

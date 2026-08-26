@@ -8,11 +8,13 @@ import { ROLE_META } from '@/lib/members-data'
 import { PERMISSION_DEFS, ROLE_DEFAULT_PERMISSIONS, PermissionSet } from '@/lib/permissions'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MemberPermissionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
+  const { lang } = useLang()
   const { members, memberPermissionOverrides, setMemberPermissionOverride, loading } = useAppData()
   const member = members.find((m) => m.id === id)
   const existingOverride = member ? memberPermissionOverrides[member.id] : undefined
@@ -50,7 +52,7 @@ export default function MemberPermissionsPage({ params }: { params: Promise<{ id
             Permissions personnalisées
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            {member.firstName} {member.lastName} · {ROLE_META[member.role].label}
+            {member.firstName} {member.lastName} · {ROLE_META[member.role].label[lang]}
           </p>
         </div>
 
@@ -69,7 +71,7 @@ export default function MemberPermissionsPage({ params }: { params: Promise<{ id
           <div>
             <div style={{ fontSize: 14, fontWeight: 600 }}>Utiliser les permissions par défaut du rôle</div>
             <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>
-              {useDefault ? `Permissions héritées du rôle ${ROLE_META[member.role].label}` : 'Permissions personnalisées — modifications manuelles activées'}
+              {useDefault ? `Permissions héritées du rôle ${ROLE_META[member.role].label[lang]}` : 'Permissions personnalisées — modifications manuelles activées'}
             </div>
           </div>
           <Toggle checked={useDefault} onChange={() => setUseDefault(!useDefault)} />

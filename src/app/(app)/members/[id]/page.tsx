@@ -12,6 +12,7 @@ import { PERMISSION_DEFS, ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
 import { useSession } from '@/providers/SessionProvider'
+import { useLang } from '@/providers/LangProvider'
 import { resetMemberPassword } from '../actions'
 
 const ACTION_ICONS: Record<string, string> = {
@@ -26,6 +27,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
+  const { lang } = useLang()
   const { hasPermission } = useSession()
   const { members, cases, auditLog, toggleMemberStatus, memberPermissionOverrides, loading } = useAppData()
   const member = members.find((m) => m.id === id)
@@ -187,7 +189,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex flex-col gap-4">
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Informations générales</h3>
               {[
-                { label: 'Rôle', value: ROLE_META[member.role].label },
+                { label: 'Rôle', value: ROLE_META[member.role].label[lang] },
                 { label: 'Email', value: member.email },
                 { label: 'Téléphone', value: member.phone },
                 { label: 'Date de création', value: new Date(member.joinedAt).toLocaleDateString('fr-FR') },
@@ -250,7 +252,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex flex-col gap-3">
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 4px' }}>Permissions actives</h3>
               <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-                {isCustomized ? 'Permissions personnalisées.' : `Permissions héritées du rôle ${ROLE_META[member.role].label}.`}{' '}
+                {isCustomized ? 'Permissions personnalisées.' : `Permissions héritées du rôle ${ROLE_META[member.role].label[lang]}.`}{' '}
                 <button onClick={() => router.push(`/members/${member.id}/permissions`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)', fontSize: 13, fontWeight: 500 }}>
                   Personnaliser →
                 </button>

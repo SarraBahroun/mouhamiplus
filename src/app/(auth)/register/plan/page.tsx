@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { PLANS } from '@/lib/billing'
+import { useLang } from '@/providers/LangProvider'
 import { selectPlan } from './actions'
 
 export default function RegisterPlanPage() {
   const router = useRouter()
+  const { tr } = useLang()
   const [selected, setSelected] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -29,10 +31,10 @@ export default function RegisterPlanPage() {
     <div className="flex flex-col gap-6">
       <div style={{ textAlign: 'center' }}>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 6px' }}>
-          Choisissez votre forfait
+          {tr.plan_choose_title}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          Vous pourrez changer de forfait à tout moment en nous contactant.
+          {tr.plan_choose_sub}
         </p>
       </div>
 
@@ -79,7 +81,7 @@ export default function RegisterPlanPage() {
       )}
 
       <Btn fullWidth disabled={!selected || loading} onClick={confirm}>
-        {loading ? '…' : 'Continuer'}
+        {loading ? '…' : tr.continue}
       </Btn>
     </div>
   )

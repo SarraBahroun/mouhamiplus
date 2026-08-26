@@ -8,9 +8,11 @@ import { Divider } from '@/components/ui/Divider'
 import { Input } from '@/components/ui/Input'
 import { Btn } from '@/components/ui/Btn'
 import { createClient } from '@/lib/supabase/client'
+import { useLang } from '@/providers/LangProvider'
 
 export default function ClientLoginPage() {
   const router = useRouter()
+  const { tr } = useLang()
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
   const [error, setError] = useState('')
@@ -19,7 +21,7 @@ export default function ClientLoginPage() {
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!email || !pass) {
-      setError('Champ requis')
+      setError(tr.client_login_required_field)
       return
     }
     setError('')
@@ -28,13 +30,13 @@ export default function ClientLoginPage() {
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password: pass })
     if (signInError || !data.user) {
       setLoading(false)
-      setError('Email ou mot de passe incorrect.')
+      setError(tr.client_login_wrong_credentials)
       return
     }
     const { data: clientRow } = await supabase.from('clients').select('id').eq('auth_user_id', data.user.id).single()
     setLoading(false)
     if (!clientRow) {
-      setError("Aucun espace client n'est associé à ce compte.")
+      setError(tr.client_login_no_client_space)
       await supabase.auth.signOut()
       return
     }
@@ -49,7 +51,7 @@ export default function ClientLoginPage() {
             <Logo size="lg" />
           </div>
           <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-body)' }}>
-            Espace client — suivez vos dossiers en toute sécurité
+            {tr.client_login_tagline}
           </p>
         </div>
 
@@ -57,27 +59,27 @@ export default function ClientLoginPage() {
 
         <div className="flex flex-col gap-4">
           <Input
-            label="Identifiant"
+            label={tr.client_login_identifier_label}
             type="email"
             value={email}
             onChange={setEmail}
             placeholder="vous@email.tn"
             error={!email && error ? error : ''}
-            hint="Votre adresse e-mail, ou l'identifiant fourni par votre cabinet."
+            hint={tr.client_login_identifier_hint}
           />
-          <Input label="Mot de passe" type="password" value={pass} onChange={setPass} error={error && (!pass || (email && pass)) ? error : ''} />
+          <Input label={tr.password} type="password" value={pass} onChange={setPass} error={error && (!pass || (email && pass)) ? error : ''} />
         </div>
 
         <div className="flex flex-col gap-3">
-          <Btn type="submit" fullWidth disabled={loading}>{loading ? '…' : 'Accéder à mon espace'}</Btn>
+          <Btn type="submit" fullWidth disabled={loading}>{loading ? '…' : tr.client_login_submit_btn}</Btn>
           <div className="flex items-center justify-center gap-1.5">
-            <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Mot de passe oublié ?</span>
+            <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.forgot}</span>
             <button
               type="button"
               onClick={() => router.push('/reset-password')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--color-primary)', fontFamily: 'var(--font-body)' }}
             >
-              Réinitialiser
+              {tr.client_login_reset_btn}
             </button>
           </div>
         </div>
@@ -87,7 +89,7 @@ export default function ClientLoginPage() {
             <path d="M8 1a5 5 0 00-5 5v1H2a1 1 0 00-1 1v6a1 1 0 001 1h12a1 1 0 001-1V8a1 1 0 00-1-1h-1V6a5 5 0 00-5-5zm3 6H5V6a3 3 0 016 0v1z" />
           </svg>
           <span style={{ fontSize: 12, color: 'var(--color-secondary-foreground)', fontFamily: 'var(--font-body)' }}>
-            Connexion sécurisée — données chiffrées SSL/TLS
+            {tr.client_login_secure_note}
           </span>
         </div>
       </form>

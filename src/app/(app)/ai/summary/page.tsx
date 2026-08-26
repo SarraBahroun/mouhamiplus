@@ -5,11 +5,13 @@ import { SelectInput } from '@/components/ui/SelectInput'
 import { Btn } from '@/components/ui/Btn'
 import { useAppData } from '@/providers/AppDataProvider'
 import { CASE_STATUS_META } from '@/lib/cases-data'
+import { useLang } from '@/providers/LangProvider'
 import { summarizeCase } from './actions'
 
 const FALLBACK_SUMMARY = ["Ce dossier ne contient pas encore assez d'éléments pour générer un résumé détaillé."]
 
 export default function AiSummaryPage() {
+  const { lang } = useLang()
   const { cases: initialCases, clients } = useAppData()
   const [caseId, setCaseId] = useState(String(initialCases[0]?.id ?? ''))
   const [shown, setShown] = useState(false)
@@ -23,7 +25,7 @@ export default function AiSummaryPage() {
     const result = await summarizeCase({
       reference: c.reference,
       title: c.title,
-      statusLabel: CASE_STATUS_META[c.status]?.label ?? c.status,
+      statusLabel: CASE_STATUS_META[c.status]?.label[lang] ?? c.status,
       practiceArea: c.practiceArea,
       openedAt: c.openedAt,
       nextHearing: c.nextHearing,

@@ -1,22 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-
-const LINKS = [
-  { href: '#pourquoi', label: 'Pourquoi Mouhami+' },
-  { href: '#contact', label: 'Contact' },
-  { href: '#abonnements', label: 'Abonnements' },
-]
+import { useLang } from '@/providers/LangProvider'
 
 /** Menu burger visible uniquement sous le breakpoint sm — les liens de nav sont masqués (hidden sm:inline) sans remplacement en dessous. */
 export function MobileNav() {
+  const { tr } = useLang()
   const [open, setOpen] = useState(false)
+
+  const LINKS = [
+    { href: '#pourquoi', label: tr.home_nav_why },
+    { href: '#contact', label: tr.home_nav_contact },
+    { href: '#abonnements', label: tr.home_nav_plans },
+  ]
 
   return (
     <div className="sm:hidden" style={{ position: 'relative' }}>
       <button
         type="button"
-        aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+        aria-label={open ? tr.mk_mobilenav_close : tr.mk_mobilenav_open}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         style={{

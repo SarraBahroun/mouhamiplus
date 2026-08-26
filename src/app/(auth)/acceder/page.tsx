@@ -3,45 +3,47 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Logo } from '@/components/ui/Logo'
-
-const OPTIONS = [
-  {
-    id: 'cabinet',
-    icon: (
-      <svg width="30" height="30" viewBox="0 0 28 28" fill="currentColor">
-        <rect x="3" y="12" width="22" height="14" rx="1" opacity="0.6" />
-        <path d="M9 12V9a5 5 0 0110 0v3" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.9" />
-        <rect x="12" y="18" width="4" height="8" rx="0.5" opacity="0.9" />
-      </svg>
-    ),
-    title: 'Espace cabinet',
-    desc: 'Avocats, collaborateurs et secrétaires — gérez vos dossiers, clients et votre équipe.',
-    href: '/login',
-  },
-  {
-    id: 'client',
-    icon: (
-      <svg width="30" height="30" viewBox="0 0 28 28" fill="currentColor">
-        <circle cx="14" cy="9" r="5" opacity="0.9" />
-        <path d="M4 24c0-5.5 4.5-10 10-10s10 4.5 10 10" opacity="0.6" />
-      </svg>
-    ),
-    title: 'Espace client',
-    desc: 'Suivez vos dossiers, vos documents et vos factures, et échangez avec votre avocat.',
-    href: '/espace-client/login',
-  },
-]
+import { useLang } from '@/providers/LangProvider'
 
 export default function PortalChooserPage() {
   const router = useRouter()
+  const { tr } = useLang()
   const [hovered, setHovered] = useState<string | null>(null)
+
+  const OPTIONS = [
+    {
+      id: 'cabinet',
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 28 28" fill="currentColor">
+          <rect x="3" y="12" width="22" height="14" rx="1" opacity="0.6" />
+          <path d="M9 12V9a5 5 0 0110 0v3" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.9" />
+          <rect x="12" y="18" width="4" height="8" rx="0.5" opacity="0.9" />
+        </svg>
+      ),
+      title: tr.portal_cabinet_title,
+      desc: tr.portal_cabinet_desc,
+      href: '/login',
+    },
+    {
+      id: 'client',
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 28 28" fill="currentColor">
+          <circle cx="14" cy="9" r="5" opacity="0.9" />
+          <path d="M4 24c0-5.5 4.5-10 10-10s10 4.5 10 10" opacity="0.6" />
+        </svg>
+      ),
+      title: tr.portal_client_title,
+      desc: tr.portal_client_desc,
+      href: '/espace-client/login',
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-8">
       <div className="text-center flex flex-col gap-3 items-center">
         <Logo size="lg" />
         <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0, maxWidth: 380 }}>
-          La plateforme juridique de confiance. Choisissez votre espace pour continuer.
+          {tr.tagline}. {tr.portal_choose_space}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export default function PortalChooserPage() {
                   gap: 4,
                 }}
               >
-                Continuer
+                {tr.continue}
                 <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ transform: isHovered ? 'translateX(2px)' : 'translateX(0)', transition: 'transform 0.18s ease' }}>
                   <path d="M5 3l4 4-4 4" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>

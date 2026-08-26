@@ -6,6 +6,7 @@ import { Btn } from '@/components/ui/Btn'
 import { CaseStatus, CASE_STATUS_META } from '@/lib/cases-data'
 import { useAppData, Case } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 const STATUSES = Object.keys(CASE_STATUS_META) as CaseStatus[]
 
@@ -20,6 +21,7 @@ function KanbanBoard({
   onDrop: (caseId: string, status: CaseStatus) => void
   onOpen: (caseId: string) => void
 }) {
+  const { lang } = useLang()
   const [dragOverStatus, setDragOverStatus] = useState<CaseStatus | null>(null)
 
   return (
@@ -51,7 +53,7 @@ function KanbanBoard({
           >
             <div className="flex items-start justify-between gap-2" style={{ padding: '2px 4px 10px' }}>
               <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color, lineHeight: 1.4 }}>
-                {meta.label}
+                {meta.label[lang]}
               </span>
               <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)', flexShrink: 0, marginTop: 2 }}>{columnCases.length}</span>
             </div>
@@ -94,6 +96,7 @@ function KanbanBoard({
 
 export default function CasesPage() {
   const router = useRouter()
+  const { lang } = useLang()
   const { showToast } = useToast()
   const { cases: initialCases, clients, members, updateCaseStatus } = useAppData()
   const [search, setSearch] = useState('')
@@ -125,7 +128,7 @@ export default function CasesPage() {
     { label: 'Dossiers au total', value: String(initialCases.length), sub: 'Tous statuts confondus', icon: '📁' },
     { label: 'Dossiers actifs', value: String(activeCount), sub: 'hors clôturés', icon: '⚖️' },
     { label: 'En appel / cassation', value: String(appealOrAboveCount), sub: 'voies de recours', icon: '📜' },
-    { label: CASE_STATUS_META.closed.label, value: String(closedCount), sub: 'dossiers archivés', icon: '✅' },
+    { label: CASE_STATUS_META.closed.label[lang], value: String(closedCount), sub: 'dossiers archivés', icon: '✅' },
   ]
 
   const areaCounts = initialCases.reduce<Record<string, number>>((acc, c) => {
@@ -203,7 +206,7 @@ export default function CasesPage() {
           >
             <option value="all">Tous les statuts</option>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{CASE_STATUS_META[s].label}</option>
+              <option key={s} value={s}>{CASE_STATUS_META[s].label[lang]}</option>
             ))}
           </select>
           <div className="flex gap-1" style={{ background: 'var(--color-secondary)', borderRadius: 'var(--radius)', padding: 3, border: '1px solid var(--color-border)' }}>
@@ -288,7 +291,7 @@ export default function CasesPage() {
                 <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>{client?.name}</span>
                 <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{assignee ? `${assignee.firstName} ${assignee.lastName}` : '—'}</span>
                 <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color, width: 'fit-content' }}>
-                  {meta.label}
+                  {meta.label[lang]}
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>
                   {c.nextHearing ? new Date(c.nextHearing).toLocaleDateString('fr-FR') : '—'}

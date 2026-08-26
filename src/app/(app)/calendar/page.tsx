@@ -3,14 +3,26 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
-const WEEKDAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-
-const MONTH_LABEL = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+const LOCALE: Record<string, string> = { fr: 'fr-FR', ar: 'ar-TN', en: 'en-US' }
 
 export default function CalendarPage() {
   const router = useRouter()
+  const { tr, lang } = useLang()
+  const locale = LOCALE[lang]
   const { cases } = useAppData()
+
+  const WEEKDAYS = [
+    tr.calendar_weekday_sun,
+    tr.calendar_weekday_mon,
+    tr.calendar_weekday_tue,
+    tr.calendar_weekday_wed,
+    tr.calendar_weekday_thu,
+    tr.calendar_weekday_fri,
+    tr.calendar_weekday_sat,
+  ]
+  const MONTH_LABEL = useMemo(() => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }), [locale])
 
   const today = useMemo(() => new Date(), [])
   const [year, setYear] = useState(today.getFullYear())
@@ -33,7 +45,7 @@ export default function CalendarPage() {
       const d = new Date(h.date)
       if (d.getFullYear() === year && d.getMonth() === month) {
         const day = d.getDate()
-        events[day] = [...(events[day] ?? []), { label: `Audience — ${c.title}`, caseId: c.id, kind: 'hearing' }]
+        events[day] = [...(events[day] ?? []), { label: `${tr.calendar_event_hearing_prefix} ${c.title}`, caseId: c.id, kind: 'hearing' }]
       }
     }
     for (const t of c.tasks) {
@@ -50,7 +62,7 @@ export default function CalendarPage() {
       <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Calendrier</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.nav_calendar}</h1>
             <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0, textTransform: 'capitalize' }}>
               {MONTH_LABEL.format(new Date(year, month, 1))}
             </p>
@@ -58,7 +70,7 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => goToMonth(-1)}
-              aria-label="Mois précédent"
+              aria-label={tr.calendar_prev_month_aria}
               style={{ width: 30, height: 30, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-card)', cursor: 'pointer' }}
             >
               ‹
@@ -67,11 +79,11 @@ export default function CalendarPage() {
               onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()) }}
               style={{ padding: '0 12px', height: 30, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-card)', cursor: 'pointer', fontSize: 12 }}
             >
-              Aujourd&apos;hui
+              {tr.common_today}
             </button>
             <button
               onClick={() => goToMonth(1)}
-              aria-label="Mois suivant"
+              aria-label={tr.calendar_next_month_aria}
               style={{ width: 30, height: 30, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-card)', cursor: 'pointer' }}
             >
               ›
@@ -127,7 +139,7 @@ export default function CalendarPage() {
                           </div>
                         ))}
                         {dayEvents.length > 2 && (
-                          <div style={{ fontSize: 10, color: 'var(--color-muted-foreground)' }}>+{dayEvents.length - 2} autres</div>
+                          <div style={{ fontSize: 10, color: 'var(--color-muted-foreground)' }}>{tr.calendar_more_events.replace('{n}', String(dayEvents.length - 2))}</div>
                         )}
                       </div>
                     </>

@@ -1,34 +1,41 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
+import { useLang } from '@/providers/LangProvider'
 import { IconFolder, IconUsers, IconTeam, IconClipboard, IconScale, IconCheck, IconCash } from '@/components/ui/icons'
 
-const DATE_LABEL = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const LOCALE: Record<string, string> = { fr: 'fr-FR', ar: 'ar-TN', en: 'en-US' }
 
-const quickActions = [
-  { label: 'Nouveau dossier', desc: 'Ouvrir un dossier', icon: <IconFolder size={20} />, target: '/cases/add' },
-  { label: 'Nouveau client', desc: 'Ajouter une fiche client', icon: <IconUsers size={20} />, target: '/clients/add' },
-  { label: 'Gérer les membres', desc: 'Équipe du cabinet', icon: <IconTeam size={20} />, target: '/members' },
-  { label: "Journal d'audit", desc: 'Traçabilité des actions', icon: <IconClipboard size={20} />, target: '/members/audit' },
-]
-
-function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
+function timeAgo(iso: string, nowMs: number, locale: string, tr: Record<string, string>): string {
+  const diffMs = nowMs - new Date(iso).getTime()
   const diffMin = Math.round(diffMs / 60000)
-  if (diffMin < 1) return "à l'instant"
-  if (diffMin < 60) return `il y a ${diffMin} min`
+  if (diffMin < 1) return tr.dashboard_time_just_now
+  if (diffMin < 60) return tr.dashboard_time_minutes_ago.replace('{n}', String(diffMin))
   const diffH = Math.round(diffMin / 60)
-  if (diffH < 24) return `il y a ${diffH}h`
-  return new Date(iso).toLocaleDateString('fr-FR')
+  if (diffH < 24) return tr.dashboard_time_hours_ago.replace('{n}', String(diffH))
+  return new Date(iso).toLocaleDateString(locale)
 }
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { tr, lang } = useLang()
+  const locale = LOCALE[lang]
+  const DATE_LABEL = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  const [nowMs] = useState(() => Date.now())
+
+  const quickActions = [
+    { label: tr.dashboard_qa_new_case_label, desc: tr.dashboard_qa_new_case_desc, icon: <IconFolder size={20} />, target: '/cases/add' },
+    { label: tr.dashboard_qa_new_client_label, desc: tr.dashboard_qa_new_client_desc, icon: <IconUsers size={20} />, target: '/clients/add' },
+    { label: tr.dashboard_qa_manage_members_label, desc: tr.dashboard_qa_manage_members_desc, icon: <IconTeam size={20} />, target: '/members' },
+    { label: tr.nav_audit, desc: tr.dashboard_qa_audit_desc, icon: <IconClipboard size={20} />, target: '/members/audit' },
+  ]
+
   const { cases, members, clients, notifications, markNotificationRead, payments, auditLog } = useAppData()
   const { currentUserName, cabinetName } = useSession()
   const cabinetNotifications = notifications.filter((n) => n.audience === 'cabinet')
@@ -42,15 +49,15 @@ export default function DashboardPage() {
   const totalRevenue = payments.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0)
 
   const stats = [
-    { label: 'Dossiers en cours', value: String(openCases.length), sub: `${cases.length} au total`, icon: <IconFolder size={20} /> },
+    { label: tr.dashboard_stat_open_cases_label, value: String(openCases.length), sub: tr.dashboard_stat_total_suffix.replace('{n}', String(cases.length)), icon: <IconFolder size={20} /> },
     {
-      label: 'Audiences à venir',
+      label: tr.dashboard_stat_upcoming_hearings_label,
       value: String(upcomingHearings.length),
-      sub: upcomingHearings[0] ? `Prochaine le ${new Date(upcomingHearings[0].nextHearing!).toLocaleDateString('fr-FR')}` : 'Aucune programmée',
+      sub: upcomingHearings[0] ? tr.dashboard_stat_next_hearing.replace('{date}', new Date(upcomingHearings[0].nextHearing!).toLocaleDateString(locale)) : tr.dashboard_stat_none_scheduled,
       icon: <IconScale size={20} />,
     },
-    { label: "Tâches du jour", value: String(todaysTasks.length), sub: "À traiter aujourd'hui", icon: <IconCheck size={20} /> },
-    { label: 'Revenus encaissés', value: `${totalRevenue.toLocaleString('fr-FR')} DT`, sub: 'Total à ce jour', icon: <IconCash size={20} /> },
+    { label: tr.dashboard_stat_tasks_today_label, value: String(todaysTasks.length), sub: tr.dashboard_stat_tasks_today_sub, icon: <IconCheck size={20} /> },
+    { label: tr.dashboard_stat_revenue_label, value: `${totalRevenue.toLocaleString(locale)} DT`, sub: tr.dashboard_stat_revenue_sub, icon: <IconCash size={20} /> },
   ]
 
   return (
@@ -58,10 +65,10 @@ export default function DashboardPage() {
       {/* Welcome */}
       <div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 600, margin: '0 0 4px' }}>
-          Bonjour, {currentUserName || '…'}
+          {tr.dashboard_welcome.replace('{name}', currentUserName || '…')}
         </h1>
         <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', margin: 0, textTransform: 'capitalize' }}>
-          {cabinetName ?? 'Mon cabinet'} · {DATE_LABEL.format(new Date())}
+          {cabinetName ?? tr.dashboard_default_firm_name} · {DATE_LABEL.format(new Date())}
         </p>
       </div>
 
@@ -92,11 +99,11 @@ export default function DashboardPage() {
         {/* Notifications */}
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-            Notifications
+            {tr.dashboard_notifications_title}
           </h2>
           <div className="flex flex-col gap-0">
             {cabinetNotifications.length === 0 && (
-              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucune notification.</p>
+              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.dashboard_no_notifications}</p>
             )}
             {cabinetNotifications.map((n, i) => (
               <div
@@ -122,18 +129,18 @@ export default function DashboardPage() {
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: 0 }}>
-              Activité récente
+              {tr.dashboard_recent_activity_title}
             </h2>
             <button
               onClick={() => router.push('/members/audit')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-primary)', fontFamily: 'var(--font-body)' }}
             >
-              Voir tout →
+              {tr.dashboard_view_all}
             </button>
           </div>
           <div className="flex flex-col gap-0">
             {auditLog.length === 0 && (
-              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucune activité récente.</p>
+              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.dashboard_no_activity}</p>
             )}
             {auditLog.slice(0, 3).map((a, i) => (
               <div
@@ -156,7 +163,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
-                  {timeAgo(a.date)}
+                  {timeAgo(a.date, nowMs, locale, tr)}
                 </span>
               </div>
             ))}
@@ -167,7 +174,7 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-          Accès rapide
+          {tr.dashboard_quick_access_title}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
           {quickActions.map((a) => (
@@ -183,7 +190,7 @@ export default function DashboardPage() {
                 borderRadius: 4,
                 background: 'var(--color-background)',
                 cursor: 'pointer',
-                textAlign: 'left',
+                textAlign: 'start',
                 width: '100%',
                 transition: 'border-color 0.15s, background 0.15s',
               }}
@@ -209,8 +216,8 @@ export default function DashboardPage() {
       {/* Upcoming hearings */}
       <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: 0 }}>Audiences à venir</h2>
-          <Btn onClick={() => router.push('/hearings')}>Voir le calendrier</Btn>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: 0 }}>{tr.dashboard_stat_upcoming_hearings_label}</h2>
+          <Btn onClick={() => router.push('/hearings')}>{tr.dashboard_view_calendar}</Btn>
         </div>
         <div className="flex flex-col gap-0">
           {upcomingHearings.slice(0, 4).map((c, i) => (
@@ -227,7 +234,7 @@ export default function DashboardPage() {
               }}
             >
               <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', minWidth: 90 }}>
-                {new Date(c.nextHearing!).toLocaleDateString('fr-FR')}
+                {new Date(c.nextHearing!).toLocaleDateString(locale)}
               </span>
               <span style={{ fontSize: 13, color: 'var(--color-foreground)', flex: 1 }}>{c.title}</span>
               <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{clients.find((cl) => cl.id === c.clientId)?.name}</span>
@@ -239,8 +246,8 @@ export default function DashboardPage() {
       {/* Members quick view */}
       <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: 0 }}>Membres du cabinet</h2>
-          <Btn onClick={() => router.push('/members')}>Gérer les membres</Btn>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: 0 }}>{tr.shell_firm_members}</h2>
+          <Btn onClick={() => router.push('/members')}>{tr.dashboard_qa_manage_members_label}</Btn>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
           {members.map((m) => (

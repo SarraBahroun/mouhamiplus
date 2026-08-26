@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useLang } from '@/providers/LangProvider'
 import { reviewPaymentReceipt } from './actions'
 
 export function ReceiptActions({ receiptId, currentStatus }: { receiptId: string; currentStatus: 'pending' | 'approved' | 'rejected' }) {
+  const { tr } = useLang()
   const [loading, setLoading] = useState<'approved' | 'rejected' | null>(null)
   const [error, setError] = useState('')
   const [done, setDone] = useState<'approved' | 'rejected' | null>(null)
@@ -26,7 +28,7 @@ export function ReceiptActions({ receiptId, currentStatus }: { receiptId: string
     return (
       <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
         <p style={{ fontSize: 12, color: status === 'approved' ? 'var(--color-primary)' : 'var(--color-error)', margin: 0 }}>
-          {status === 'approved' ? 'Actif — cabinet activé.' : 'Rejeté — abonnement suspendu.'}
+          {status === 'approved' ? tr.admin_payments_active_note : tr.admin_payments_rejected_note}
         </p>
         <button
           onClick={() => decide(status === 'approved' ? 'rejected' : 'approved')}
@@ -43,7 +45,7 @@ export function ReceiptActions({ receiptId, currentStatus }: { receiptId: string
             opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? '…' : status === 'approved' ? 'Révoquer' : 'Réactiver'}
+          {loading ? '…' : status === 'approved' ? tr.admin_payments_revoke : tr.admin_payments_reactivate}
         </button>
         {error && <span style={{ fontSize: 11, color: 'var(--color-error)' }}>{error}</span>}
       </div>
@@ -67,7 +69,7 @@ export function ReceiptActions({ receiptId, currentStatus }: { receiptId: string
           opacity: loading ? 0.6 : 1,
         }}
       >
-        {loading === 'approved' ? '…' : 'Approuver'}
+        {loading === 'approved' ? '…' : tr.admin_payments_approve}
       </button>
       <button
         onClick={() => decide('rejected')}
@@ -84,7 +86,7 @@ export function ReceiptActions({ receiptId, currentStatus }: { receiptId: string
           opacity: loading ? 0.6 : 1,
         }}
       >
-        {loading === 'rejected' ? '…' : 'Rejeter'}
+        {loading === 'rejected' ? '…' : tr.admin_payments_reject}
       </button>
       {error && <span style={{ fontSize: 11, color: 'var(--color-error)' }}>{error}</span>}
     </div>

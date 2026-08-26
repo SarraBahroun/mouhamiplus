@@ -6,15 +6,19 @@ import { Btn } from '@/components/ui/Btn'
 import { Avatar } from '@/components/members/Avatar'
 import { ClientType } from '@/lib/clients-data'
 import { useAppData } from '@/providers/AppDataProvider'
-
-const TYPE_LABEL: Record<ClientType, string> = { individual: 'Particulier', company: 'Entreprise' }
+import { useLang } from '@/providers/LangProvider'
 
 function initialsOf(name: string) {
   return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
+const LOCALE: Record<string, string> = { fr: 'fr-FR', ar: 'ar-TN', en: 'en-US' }
+
 export default function ClientsPage() {
   const router = useRouter()
+  const { tr, lang } = useLang()
+  const locale = LOCALE[lang]
+  const TYPE_LABEL: Record<ClientType, string> = { individual: tr.clients_type_individual, company: tr.clients_type_company }
   const { clients, cases } = useAppData()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<ClientType | 'all'>('all')
@@ -31,7 +35,7 @@ export default function ClientsPage() {
   const portalCount = clients.filter((c) => c.hasPortalAccess).length
 
   const cityCounts = clients.reduce<Record<string, number>>((acc, c) => {
-    const city = c.city || 'Non renseignée'
+    const city = c.city || tr.clients_city_unknown
     acc[city] = (acc[city] ?? 0) + 1
     return acc
   }, {})
@@ -43,10 +47,15 @@ export default function ClientsPage() {
     .slice(0, 5)
 
   const stats = [
-    { label: 'Clients enregistrés', value: String(clients.length), sub: `${individualCount} particulier(s) · ${companyCount} entreprise(s)`, icon: '👥' },
-    { label: 'Particuliers', value: String(individualCount), sub: 'Personnes physiques', icon: '🧑' },
-    { label: 'Entreprises', value: String(companyCount), sub: 'Personnes morales', icon: '🏢' },
-    { label: 'Accès portail actif', value: String(portalCount), sub: `sur ${clients.length} client(s)`, icon: '🔐' },
+    {
+      label: tr.clients_stat_total_label,
+      value: String(clients.length),
+      sub: tr.clients_stat_total_sub.replace('{individual}', String(individualCount)).replace('{company}', String(companyCount)),
+      icon: '👥',
+    },
+    { label: tr.clients_stat_individuals_label, value: String(individualCount), sub: tr.clients_stat_individuals_sub, icon: '🧑' },
+    { label: tr.clients_stat_companies_label, value: String(companyCount), sub: tr.clients_stat_companies_sub, icon: '🏢' },
+    { label: tr.clients_stat_portal_label, value: String(portalCount), sub: tr.clients_stat_portal_sub.replace('{n}', String(clients.length)), icon: '🔐' },
   ]
 
   return (
@@ -56,13 +65,13 @@ export default function ClientsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>
-              Clients
+              {tr.clients_title}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-              {clients.length} clients au total
+              {tr.clients_total_count.replace('{n}', String(clients.length))}
             </p>
           </div>
-          <Btn onClick={() => router.push('/clients/add')}>+ Nouveau client</Btn>
+          <Btn onClick={() => router.push('/clients/add')}>{tr.clients_add_button}</Btn>
         </div>
 
         {/* Stats */}
@@ -90,7 +99,7 @@ export default function ClientsPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un client…"
+              placeholder={tr.clients_search_placeholder}
               style={{
                 width: '100%',
                 padding: '9px 12px 9px 30px',
@@ -123,7 +132,7 @@ export default function ClientsPage() {
                   transition: 'all 0.12s',
                 }}
               >
-                {t === 'all' ? 'Tous' : TYPE_LABEL[t]}
+                {t === 'all' ? tr.common_all : TYPE_LABEL[t]}
               </button>
             ))}
           </div>
@@ -141,7 +150,7 @@ export default function ClientsPage() {
               background: 'var(--color-secondary)',
             }}
           >
-            {['Client', 'Type', 'Contact', 'Dossiers', 'Dernière activité'].map((h) => (
+            {[tr.clients_col_client, tr.clients_col_type, tr.clients_col_contact, tr.nav_cases, tr.clients_col_last_activity].map((h) => (
               <span key={h} style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {h}
               </span>
@@ -149,7 +158,7 @@ export default function ClientsPage() {
           </div>
           {filtered.length === 0 && (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>
-              Aucun client trouvé
+              {tr.clients_empty_search}
             </div>
           )}
           {filtered.map((c, i) => (
@@ -196,7 +205,7 @@ export default function ClientsPage() {
               <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>
                 {cases.filter((k) => k.clientId === c.id).length}
               </span>
-              <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{new Date(c.lastActivity).toLocaleDateString('fr-FR')}</span>
+              <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{new Date(c.lastActivity).toLocaleDateString(locale)}</span>
             </div>
           ))}
         </div>
@@ -205,10 +214,10 @@ export default function ClientsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-              Répartition par ville
+              {tr.clients_by_city_title}
             </h2>
             {byCity.length === 0 && (
-              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucune donnée.</p>
+              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.common_no_data}</p>
             )}
             <div className="flex flex-col gap-3">
               {byCity.map(([city, count]) => (
@@ -227,10 +236,10 @@ export default function ClientsPage() {
 
           <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-              Clients récents
+              {tr.clients_recent_title}
             </h2>
             {recentClients.length === 0 && (
-              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucun client pour le moment.</p>
+              <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.clients_no_recent}</p>
             )}
             <div className="flex flex-col gap-0">
               {recentClients.map((c, i) => (
@@ -252,7 +261,7 @@ export default function ClientsPage() {
                     <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{TYPE_LABEL[c.type]}</div>
                   </div>
                   <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {new Date(c.lastActivity).toLocaleDateString('fr-FR')}
+                    {new Date(c.lastActivity).toLocaleDateString(locale)}
                   </span>
                 </div>
               ))}

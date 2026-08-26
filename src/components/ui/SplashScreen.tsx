@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLang } from '@/providers/LangProvider'
 
 const STORAGE_KEY = 'mouhamiplus_splash_seen'
 
 export function SplashScreen() {
+  const { tr } = useLang()
   const [phase, setPhase] = useState<'visible' | 'hiding' | 'hidden'>('visible')
 
   useEffect(() => {
     if (sessionStorage.getItem(STORAGE_KEY)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture ponctuelle de sessionStorage au montage, pas une synchro externe continue
       setPhase('hidden')
       return
     }
@@ -114,7 +117,7 @@ export function SplashScreen() {
             lineHeight: 1.5,
           }}
         >
-          « Nul n&apos;est censé ignorer la loi »
+          {tr.mk_splash_quote}
         </p>
       </div>
     </div>

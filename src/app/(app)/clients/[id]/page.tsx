@@ -8,6 +8,7 @@ import { CASE_STATUS_META } from '@/lib/cases-data'
 import { INVOICE_STATUS_META, PAYMENT_STATUS_META } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 import { inviteClient, resetClientPassword } from '../actions'
 
 function initialsOf(name: string) {
@@ -18,6 +19,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
+  const { lang } = useLang()
   const { clients, cases: allCases, members, invoices, payments, refresh, loading } = useAppData()
   const client = clients.find((c) => c.id === id)
   const [tab, setTab] = useState<'info' | 'cases' | 'history' | 'documents' | 'payments' | 'appointments'>('info')
@@ -228,7 +230,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                         <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>Réf. {c.reference} · {assignee ? `${assignee.firstName} ${assignee.lastName}` : '—'}</div>
                       </div>
                       <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>
-                        {meta.label}
+                        {meta.label[lang]}
                       </span>
                     </div>
                   )

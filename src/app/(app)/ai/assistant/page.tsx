@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Btn } from '@/components/ui/Btn'
+import { useLang } from '@/providers/LangProvider'
 import { askLegalAssistant } from './actions'
 
 interface ChatMessage {
@@ -10,54 +11,48 @@ interface ChatMessage {
   text: string
 }
 
-const INITIAL: ChatMessage[] = [
-  { id: 1, from: 'ai', text: 'Bonjour Maître, je suis votre assistant juridique. Comment puis-je vous aider aujourd\'hui ?' },
-]
-
-const RULES: { keywords: string[]; reply: string }[] = [
+const RULES: { keywords: string[]; replyKey: string }[] = [
   {
     keywords: ['délai', 'delai', 'prescription'],
-    reply: 'En droit tunisien, le délai de prescription de droit commun pour les actions personnelles, y compris en responsabilité contractuelle, est de quinze (15) ans (article 402 du Code des obligations et des contrats), sauf délais spéciaux prévus par des textes particuliers.',
+    replyKey: 'ai_assistant_reply_prescription',
   },
   {
     keywords: ['facture', 'paiement', 'payer', 'régler', 'regler'],
-    reply: "Vous pouvez consulter le détail de vos factures dans la section Factures et l'historique des paiements dans Paiements, accessibles depuis le menu.",
+    replyKey: 'ai_assistant_reply_invoices',
   },
   {
     keywords: ['audience', 'rdv', 'rendez-vous', 'rendez vous', 'calendrier'],
-    reply: 'Les prochaines audiences sont listées dans Audiences, et une vue mensuelle est disponible dans Calendrier.',
+    replyKey: 'ai_assistant_reply_hearings',
   },
   {
     keywords: ['document', 'modèle', 'modele', 'générer', 'generer', 'rédiger', 'rediger'],
-    reply: 'Vous pouvez générer un document juridique (mise en demeure, assignation, conclusions…) à partir d\'un modèle depuis Génération de documents par IA.',
+    replyKey: 'ai_assistant_reply_documents',
   },
   {
     keywords: ['client'],
-    reply: 'Toutes les fiches clients, avec leurs dossiers, documents et paiements, sont accessibles depuis la section Clients.',
+    replyKey: 'ai_assistant_reply_clients',
   },
   {
     keywords: ['dossier', 'affaire'],
-    reply: 'La liste de vos dossiers, avec leur statut et prochaine audience, se trouve dans la section Dossiers.',
+    replyKey: 'ai_assistant_reply_cases',
   },
 ]
 
-const FALLBACK_REPLY = "Je note votre question. Dans une version complète, je consulterais la base juridique du cabinet et la jurisprudence pertinente pour vous fournir une réponse détaillée et sourcée."
-
-const SUGGESTED_QUESTIONS = [
-  'Quel est le délai de prescription pour une action contractuelle ?',
-  'Où voir mes prochaines audiences ?',
-  'Comment générer une mise en demeure ?',
-  'Où consulter mes factures en attente ?',
-]
-
-function getReply(question: string): string {
+function getReply(question: string, tr: Record<string, string>): string {
   const q = question.toLowerCase()
   const match = RULES.find((r) => r.keywords.some((k) => q.includes(k)))
-  return match?.reply ?? FALLBACK_REPLY
+  return match ? tr[match.replyKey] : tr.ai_assistant_fallback_reply
 }
 
 export default function AiAssistantPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL)
+  const { tr } = useLang()
+  const SUGGESTED_QUESTIONS = [
+    tr.ai_assistant_suggested_q1,
+    tr.ai_assistant_suggested_q2,
+    tr.ai_assistant_suggested_q3,
+    tr.ai_assistant_suggested_q4,
+  ]
+  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 1, from: 'ai', text: tr.ai_assistant_greeting }])
   const [draft, setDraft] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -68,7 +63,7 @@ export default function AiAssistantPage() {
     setDraft('')
     setLoading(true)
     const result = await askLegalAssistant(question)
-    const reply = 'reply' in result ? result.reply : getReply(question)
+    const reply = 'reply' in result ? result.reply : getReply(question, tr)
     setMessages((m) => [...m, { id: nextId + 1, from: 'ai', text: reply }])
     setLoading(false)
   }
@@ -78,10 +73,10 @@ export default function AiAssistantPage() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>
-            Assistant juridique IA
+            {tr.nav_ai_assistant}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Posez une question juridique ou demandez de l&apos;aide sur un dossier
+            {tr.ai_assistant_subtitle}
           </p>
         </div>
 
@@ -153,7 +148,7 @@ export default function AiAssistantPage() {
                 background: 'var(--color-secondary)',
               }}
             >
-              L&apos;assistant réfléchit…
+              {tr.ai_assistant_thinking}
             </div>
           )}
         </div>
@@ -163,7 +158,7 @@ export default function AiAssistantPage() {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && ask(draft)}
-            placeholder="Posez votre question…"
+            placeholder={tr.ai_assistant_input_placeholder}
             disabled={loading}
             style={{
               flex: 1,
@@ -177,7 +172,7 @@ export default function AiAssistantPage() {
               color: 'var(--color-foreground)',
             }}
           />
-          <Btn onClick={() => ask(draft)} disabled={loading}>Envoyer</Btn>
+          <Btn onClick={() => ask(draft)} disabled={loading}>{tr.common_send}</Btn>
         </div>
       </div>
     </div>

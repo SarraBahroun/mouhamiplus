@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 import { useToast } from '@/providers/ToastProvider'
 
 const TYPE_ICON: Record<string, string> = { PDF: '📕', DOCX: '📘', XLSX: '📗' }
@@ -10,6 +11,7 @@ const TYPES = ['PDF', 'DOCX', 'XLSX'] as const
 export default function DocumentsPage() {
   const { cases, getDocumentUrl } = useAppData()
   const { showToast } = useToast()
+  const { tr } = useLang()
   const allDocuments = cases.flatMap((c) => c.documents.map((d) => ({ ...d, caseTitle: c.title, caseId: c.id })))
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | 'all'>('all')
@@ -31,10 +33,10 @@ export default function DocumentsPage() {
   const countByType = (t: string) => allDocuments.filter((d) => d.type === t).length
 
   const stats = [
-    { label: 'Documents au total', value: String(allDocuments.length), sub: `${casesWithDocs} dossier(s) concerné(s)`, icon: '🗂️' },
-    { label: 'PDF', value: String(countByType('PDF')), sub: 'fichiers PDF', icon: '📕' },
-    { label: 'DOCX', value: String(countByType('DOCX')), sub: 'fichiers Word', icon: '📘' },
-    { label: 'XLSX', value: String(countByType('XLSX')), sub: 'fichiers Excel', icon: '📗' },
+    { label: tr.documents_stat_total_label, value: String(allDocuments.length), sub: `${casesWithDocs} ${tr.documents_stat_total_sub_suffix}`, icon: '🗂️' },
+    { label: 'PDF', value: String(countByType('PDF')), sub: tr.documents_stat_pdf_sub, icon: '📕' },
+    { label: 'DOCX', value: String(countByType('DOCX')), sub: tr.documents_stat_docx_sub, icon: '📘' },
+    { label: 'XLSX', value: String(countByType('XLSX')), sub: tr.documents_stat_xlsx_sub, icon: '📗' },
   ]
 
   const recentDocuments = [...allDocuments]
@@ -45,16 +47,16 @@ export default function DocumentsPage() {
     if (!storagePath) return
     const url = await getDocumentUrl(storagePath)
     if (url) window.open(url, '_blank')
-    else showToast("Impossible d'ouvrir le document")
+    else showToast(tr.documents_open_error)
   }
 
   return (
     <div>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Documents</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.nav_documents}</h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            {allDocuments.length} documents dans tous les dossiers
+            {allDocuments.length} {tr.documents_subtitle_suffix}
           </p>
         </div>
 
@@ -74,7 +76,7 @@ export default function DocumentsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un document…"
+            placeholder={tr.documents_search_placeholder}
             style={{
               flex: 1,
               padding: '9px 12px',
@@ -106,7 +108,7 @@ export default function DocumentsPage() {
                   transition: 'all 0.12s',
                 }}
               >
-                {t === 'all' ? 'Tous' : t}
+                {t === 'all' ? tr.common_all : t}
               </button>
             ))}
           </div>
@@ -114,7 +116,7 @@ export default function DocumentsPage() {
 
         {groups.length === 0 && (
           <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14, border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-card)' }}>
-            Aucun document trouvé
+            {tr.documents_empty}
           </div>
         )}
 
@@ -162,7 +164,7 @@ export default function DocumentsPage() {
                   <span style={{ fontSize: 18 }}>{TYPE_ICON[d.type] ?? '📄'}</span>
                   <span style={{ fontSize: 14, color: 'var(--color-foreground)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
                   <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)', flexShrink: 0 }}>{d.size}</span>
-                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', minWidth: 76, textAlign: 'right', flexShrink: 0 }}>{d.addedAt}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', minWidth: 76, textAlign: 'end', flexShrink: 0 }}>{d.addedAt}</span>
                 </div>
               ))}
             </div>
@@ -172,10 +174,10 @@ export default function DocumentsPage() {
         {/* Documents récents */}
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-            Ajoutés récemment
+            {tr.documents_recent_title}
           </h2>
           {recentDocuments.length === 0 && (
-            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucun document pour le moment.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.documents_recent_empty}</p>
           )}
           <div className="flex flex-col gap-0">
             {recentDocuments.map((d, i) => (

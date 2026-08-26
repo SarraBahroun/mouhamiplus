@@ -8,11 +8,13 @@ import { SelectInput } from '@/components/ui/SelectInput'
 import { Btn } from '@/components/ui/Btn'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 import { ClientType } from '@/lib/clients-data'
 import { inviteClient } from '../actions'
 
 export default function ClientAddPage() {
   const router = useRouter()
+  const { tr } = useLang()
   const { showToast } = useToast()
   const { addClient, refresh } = useAppData()
   const [form, setForm] = useState({ name: '', type: 'individual', email: '', phone: '', address: '', city: '' })
@@ -22,7 +24,7 @@ export default function ClientAddPage() {
 
   const submit = async () => {
     const nextErrors: typeof errors = {}
-    if (!form.name.trim()) nextErrors.name = 'Le nom est obligatoire.'
+    if (!form.name.trim()) nextErrors.name = tr.clients_add_error_name_required
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
@@ -30,20 +32,20 @@ export default function ClientAddPage() {
     const id = await addClient({ ...form, type: form.type as ClientType })
     if (!id) {
       setLoading(false)
-      showToast("Échec de la création du client")
+      showToast(tr.clients_add_toast_create_failed)
       return
     }
 
     const invite = await inviteClient(id)
     if ('error' in invite) {
-      showToast(`Client ajouté, mais l'accès n'a pas pu être créé : ${invite.error}`)
+      showToast(tr.clients_add_toast_partial_fail.replace('{error}', invite.error))
     } else {
       await refresh()
       sessionStorage.setItem(
         `mouhamiplus-client-access-${id}`,
         JSON.stringify({ login: invite.loginId ?? form.email, tempPassword: invite.tempPassword, emailed: invite.emailed })
       )
-      showToast(invite.emailed ? 'Client ajouté — identifiants envoyés par email (voir aussi la fiche)' : 'Client ajouté — identifiants générés (voir la fiche)')
+      showToast(invite.emailed ? tr.clients_add_toast_success_emailed : tr.clients_add_toast_success_generated)
     }
     setLoading(false)
     router.push(`/clients/${id}`)
@@ -55,33 +57,33 @@ export default function ClientAddPage() {
         <div className="flex flex-col gap-5">
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: '0 0 4px' }}>
-              Nouveau client
+              {tr.clients_add_title}
             </h1>
-            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>Créer une fiche client</p>
+            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>{tr.clients_add_subtitle}</p>
           </div>
 
           <SelectInput
-            label="Type de client"
+            label={tr.clients_add_type_label}
             value={form.type}
             onChange={f('type')}
-            options={[{ value: 'individual', label: 'Particulier' }, { value: 'company', label: 'Entreprise' }]}
+            options={[{ value: 'individual', label: tr.clients_type_individual }, { value: 'company', label: tr.clients_type_company }]}
           />
-          <Input label="Nom complet / Raison sociale" value={form.name} onChange={f('name')} placeholder="Ahmed Ben Salah" error={errors.name} />
+          <Input label={tr.clients_add_name_label} value={form.name} onChange={f('name')} placeholder={tr.clients_add_name_placeholder} error={errors.name} />
           <Input
-            label="Adresse e-mail (optionnel)"
+            label={tr.clients_add_email_label}
             type="email"
             value={form.email}
             onChange={f('email')}
-            placeholder="client@email.tn"
-            hint="Si laissée vide, un identifiant de connexion sera généré automatiquement — à transmettre au client avec le mot de passe."
+            placeholder={tr.clients_add_email_placeholder}
+            hint={tr.clients_add_email_hint}
           />
-          <Input label="Téléphone" type="tel" value={form.phone} onChange={f('phone')} placeholder="+216 XX XXX XXX" />
-          <Input label="Adresse" value={form.address} onChange={f('address')} placeholder="12 Rue de Marseille" />
-          <Input label="Ville" value={form.city} onChange={f('city')} placeholder="Tunis" />
+          <Input label={tr.common_phone} type="tel" value={form.phone} onChange={f('phone')} placeholder={tr.clients_add_phone_placeholder} />
+          <Input label={tr.common_address} value={form.address} onChange={f('address')} placeholder={tr.clients_add_address_placeholder} />
+          <Input label={tr.common_city} value={form.city} onChange={f('city')} placeholder={tr.clients_add_city_placeholder} />
 
           <div className="flex flex-col gap-2">
-            <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Créer la fiche client et son accès'}</Btn>
-            <Btn fullWidth variant="ghost" onClick={() => router.push('/clients')}>Annuler</Btn>
+            <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : tr.clients_add_submit_button}</Btn>
+            <Btn fullWidth variant="ghost" onClick={() => router.push('/clients')}>{tr.common_cancel}</Btn>
           </div>
         </div>
       </Card>

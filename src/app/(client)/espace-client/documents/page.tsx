@@ -3,10 +3,12 @@
 import { useAppData } from '@/providers/AppDataProvider'
 import { useClientSession } from '@/providers/ClientSessionProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 const TYPE_ICON: Record<string, string> = { PDF: '📕', DOCX: '📘', XLSX: '📗' }
 
 export default function ClientDocumentsPage() {
+  const { tr } = useLang()
   const { clientProfile } = useClientSession()
   const { cases: allCases, getDocumentUrl } = useAppData()
   const { showToast } = useToast()
@@ -17,22 +19,25 @@ export default function ClientDocumentsPage() {
     if (!storagePath) return
     const url = await getDocumentUrl(storagePath)
     if (url) window.open(url, '_blank')
-    else showToast("Impossible d'ouvrir le document")
+    else showToast(tr.client_documents_open_error)
   }
+
+  const countLabel = (documents.length === 1 ? tr.client_documents_count_one : tr.client_documents_count_other).replace(
+    '{count}',
+    String(documents.length)
+  )
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Mes documents</h1>
-          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            {documents.length} document{documents.length !== 1 ? 's' : ''} partagé{documents.length !== 1 ? 's' : ''} par le cabinet
-          </p>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.client_documents_title}</h1>
+          <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>{countLabel}</p>
         </div>
 
         <div style={{ border: '1px solid var(--color-border)', borderRadius: 6, overflow: 'hidden', background: 'var(--color-card)' }}>
           {documents.length === 0 && (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>Aucun document</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>{tr.client_documents_empty}</div>
           )}
           {documents.map((d, i) => (
             <div
@@ -55,7 +60,7 @@ export default function ClientDocumentsPage() {
                 <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{d.caseTitle}</div>
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{d.size}</span>
-              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', minWidth: 76, textAlign: 'right' }}>{d.addedAt}</span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)', minWidth: 76, textAlign: 'end' }}>{d.addedAt}</span>
             </div>
           ))}
         </div>

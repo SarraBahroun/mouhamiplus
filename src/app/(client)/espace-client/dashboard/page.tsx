@@ -5,10 +5,12 @@ import { CASE_STATUS_META } from '@/lib/cases-data'
 import { INVOICE_STATUS_META } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useClientSession } from '@/providers/ClientSessionProvider'
+import { useLang } from '@/providers/LangProvider'
 import { IconFolder, IconScale, IconCreditCard } from '@/components/ui/icons'
 
 export default function ClientDashboardPage() {
   const router = useRouter()
+  const { lang } = useLang()
   const { clientProfile, loading } = useClientSession()
   const { cases: allCases, invoices } = useAppData()
 
@@ -75,7 +77,7 @@ export default function ClientDashboardPage() {
               return (
                 <div key={c.id} onClick={() => router.push(`/espace-client/dossiers/${c.id}`)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: 4, cursor: 'pointer' }}>
                   <span style={{ fontSize: 13, color: 'var(--color-foreground)', flex: 1 }}>{c.title}</span>
-                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>{meta.label}</span>
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>{meta.label[lang]}</span>
                 </div>
               )
             })}

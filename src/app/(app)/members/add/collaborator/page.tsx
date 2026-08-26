@@ -10,11 +10,13 @@ import { BaseMemberFields, MemberFormFields } from '@/components/members/BaseMem
 import { SPECIALITIES } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MembersFormCollaboratorPage() {
   const router = useRouter()
   const { addMember } = useAppData()
   const { showToast } = useToast()
+  const { tr } = useLang()
   const [form, setForm] = useState<MemberFormFields>({ firstName: '', lastName: '', email: '', phone: '' })
   const [specs, setSpecs] = useState<string[]>([])
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function MembersFormCollaboratorPage() {
       return
     }
     sessionStorage.setItem(`mouhamiplus-member-access-${result.id}`, JSON.stringify({ tempPassword: result.tempPassword }))
-    showToast(result.emailed ? 'Compte créé — identifiants envoyés par e-mail' : 'Compte créé — mot de passe temporaire disponible sur la fiche du membre')
+    showToast(result.emailed ? tr.member_add_toast_emailed : tr.member_add_toast_temp_password)
     router.push(`/members/${result.id}/permissions`)
   }
 
@@ -40,16 +42,16 @@ export default function MembersFormCollaboratorPage() {
         <div className="flex items-center gap-3">
           <RoleBadge role="collaborator" size="md" />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: 0 }}>
-            Création collaborateur
+            {tr.member_add_collaborator_title}
           </h1>
         </div>
 
         <BaseMemberFields form={form} setForm={setForm} />
 
-        <Divider text="SPÉCIALITÉS" />
+        <Divider text={tr.member_specialities_divider} />
 
         <div className="flex flex-col gap-2">
-          <label style={{ fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-body)' }}>Domaines de spécialité</label>
+          <label style={{ fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-body)' }}>{tr.member_specialities_label}</label>
           <div className="flex flex-wrap gap-2">
             {SPECIALITIES.map((s) => (
               <button
@@ -76,8 +78,8 @@ export default function MembersFormCollaboratorPage() {
         {error && <p style={{ fontSize: 12, color: 'var(--color-error)', margin: 0 }}>{error}</p>}
 
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Continuer vers les permissions'}</Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>Retour</Btn>
+          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : tr.member_continue_permissions_button}</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>{tr.shell_back}</Btn>
         </div>
       </div>
     </Card>

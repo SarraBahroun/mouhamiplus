@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Btn } from '@/components/ui/Btn'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 import { createClient } from '@/lib/supabase/client'
 
 interface DeadlineRule {
@@ -19,6 +20,7 @@ interface DeadlineRule {
 export default function DeadlineRulesPage() {
   const router = useRouter()
   const { showToast } = useToast()
+  const { tr } = useLang()
   const [rules, setRules] = useState<DeadlineRule[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
@@ -40,7 +42,7 @@ export default function DeadlineRulesPage() {
     const raw = drafts[rule.id] ?? (rule.days?.toString() ?? '')
     const days = raw.trim() === '' ? null : Number(raw)
     if (raw.trim() !== '' && (!Number.isInteger(days) || (days as number) <= 0)) {
-      showToast('Le délai doit être un nombre de jours entier positif.')
+      showToast(tr.deadlines_save_toast_invalid)
       return
     }
     setSaving(rule.id)
@@ -54,11 +56,11 @@ export default function DeadlineRulesPage() {
       .select('id')
     setSaving(null)
     if (error || !data || data.length === 0) {
-      showToast("Impossible d'enregistrer (vérifiez vos permissions).")
+      showToast(tr.deadlines_save_toast_error)
       return
     }
     setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, days, verified: days !== null } : r)))
-    showToast('Délai enregistré')
+    showToast(tr.deadlines_save_toast_success)
   }
 
   return (
@@ -66,22 +68,22 @@ export default function DeadlineRulesPage() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>
-            Délais légaux (Tunisie)
+            {tr.settings_deadlines_section}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Référentiel des délais de recours du Code de procédure civile et commerciale (CPCC).
+            {tr.deadlines_subtitle}
           </p>
         </div>
 
         <div style={{ padding: '12px 16px', background: 'rgba(230,81,0,0.06)', border: '1px solid rgba(230,81,0,0.25)', borderRadius: 6 }}>
           <p style={{ fontSize: 13, color: 'var(--color-foreground)', margin: 0 }}>
-            ⚠️ Ces délais ne sont <strong>pas pré-remplis</strong> — vérifiez chaque valeur sur le texte officiel du CPCC
-            (<a href="https://www.jurisitetunisie.com/tunisie/codes/cpcc/menu.html" target="_blank" rel="noreferrer" style={{ color: 'var(--color-primary)' }}>jurisitetunisie.com</a>)
-            avant de la renseigner. Un délai non vérifié n&apos;est utilisé nulle part ailleurs dans l&apos;application.
+            {tr.deadlines_warning_prefix} <strong>{tr.deadlines_warning_bold}</strong> {tr.deadlines_warning_middle}
+            {' ('}<a href="https://www.jurisitetunisie.com/tunisie/codes/cpcc/menu.html" target="_blank" rel="noreferrer" style={{ color: 'var(--color-primary)' }}>{tr.deadlines_warning_link}</a>{') '}
+            {tr.deadlines_warning_suffix}
           </p>
         </div>
 
-        {loading && <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Chargement…</p>}
+        {loading && <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.common_loading}</p>}
 
         <div className="flex flex-col gap-3">
           {rules.map((rule) => (
@@ -101,11 +103,11 @@ export default function DeadlineRulesPage() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {rule.verified ? 'VÉRIFIÉ' : 'NON VÉRIFIÉ'}
+                  {rule.verified ? tr.deadlines_status_verified : tr.deadlines_status_unverified}
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 10px' }}>
-                Point de départ : {rule.trigger_event}
+                {tr.deadlines_trigger_label} {rule.trigger_event}
                 {rule.note ? ` — ${rule.note}` : ''}
               </p>
               <div className="flex items-center gap-2">
@@ -114,22 +116,22 @@ export default function DeadlineRulesPage() {
                   min={1}
                   value={drafts[rule.id] ?? (rule.days?.toString() ?? '')}
                   onChange={(e) => setDrafts((p) => ({ ...p, [rule.id]: e.target.value }))}
-                  placeholder="Nombre de jours"
+                  placeholder={tr.deadlines_days_placeholder}
                   style={{ width: 140, padding: '7px 10px', fontSize: 13, border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-background)', color: 'var(--color-foreground)', outline: 'none' }}
                 />
-                <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>jours</span>
+                <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{tr.deadlines_days_unit}</span>
                 <Btn variant="secondary" onClick={() => save(rule)} disabled={saving === rule.id}>
-                  {saving === rule.id ? '…' : 'Enregistrer'}
+                  {saving === rule.id ? '…' : tr.common_save}
                 </Btn>
               </div>
             </div>
           ))}
           {!loading && rules.length === 0 && (
-            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>Aucune règle de délai définie.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{tr.deadlines_empty}</p>
           )}
         </div>
 
-        <Btn fullWidth variant="ghost" onClick={() => router.push('/settings')}>← Retour aux paramètres</Btn>
+        <Btn fullWidth variant="ghost" onClick={() => router.push('/settings')}>{tr.deadlines_back_to_settings}</Btn>
       </div>
     </div>
   )

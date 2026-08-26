@@ -7,10 +7,12 @@ import { CASE_STATUS_META } from '@/lib/cases-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useClientSession } from '@/providers/ClientSessionProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function ClientCaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { lang } = useLang()
   const { clientProfile, loading: clientLoading } = useClientSession()
   const { cases, members, addCaseMessage, getDocumentUrl, loading: dataLoading } = useAppData()
   const { showToast } = useToast()
@@ -56,7 +58,7 @@ export default function ClientCaseDetailPage({ params }: { params: Promise<{ id:
         <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 8, padding: '20px 22px' }}>
           <div className="flex items-center gap-3 flex-wrap">
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: 0 }}>{caseData.title}</h2>
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>{meta.label}</span>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>{meta.label[lang]}</span>
           </div>
           <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
             <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>Réf. {caseData.reference}</span>
@@ -98,7 +100,7 @@ export default function ClientCaseDetailPage({ params }: { params: Promise<{ id:
                 { label: 'Référence', value: caseData.reference },
                 { label: 'Domaine', value: caseData.practiceArea },
                 { label: 'Avocat en charge', value: assignee ? `${assignee.firstName} ${assignee.lastName}` : '—' },
-                { label: 'Statut', value: meta.label },
+                { label: 'Statut', value: meta.label[lang] },
                 { label: "Date d'ouverture", value: new Date(caseData.openedAt).toLocaleDateString('fr-FR') },
               ].map((row) => (
                 <div key={row.label} style={{ display: 'flex', gap: 12, alignItems: 'baseline', borderBottom: '1px solid var(--color-border)', paddingBottom: 10 }}>

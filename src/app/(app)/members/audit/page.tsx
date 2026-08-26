@@ -8,11 +8,13 @@ import { RoleBadge } from '@/components/members/RoleBadge'
 import { ACTION_COLORS } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MembersAuditPage() {
   const router = useRouter()
   const { auditLog, loading } = useAppData()
   const { hasPermission, loading: sessionLoading } = useSession()
+  const { tr } = useLang()
   const [expanded, setExpanded] = useState<string | null>(null)
   const [userFilter, setUserFilter] = useState('all')
   const [actionFilter, setActionFilter] = useState('all')
@@ -41,10 +43,10 @@ export default function MembersAuditPage() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>
-            Journal d&apos;audit
+            {tr.nav_audit}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Traçabilité des actions effectuées sur les dossiers, clients, documents et audiences du cabinet
+            {tr.audit_subtitle}
           </p>
         </div>
 
@@ -55,14 +57,14 @@ export default function MembersAuditPage() {
             onChange={(e) => setUserFilter(e.target.value)}
             style={{ padding: '7px 10px', fontSize: 12, fontFamily: 'var(--font-mono)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-card)', color: 'var(--color-foreground)', outline: 'none', cursor: 'pointer' }}
           >
-            {users.map((u) => <option key={u} value={u}>{u === 'all' ? 'Tous les utilisateurs' : u}</option>)}
+            {users.map((u) => <option key={u} value={u}>{u === 'all' ? tr.audit_filter_all_users : u}</option>)}
           </select>
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
             style={{ padding: '7px 10px', fontSize: 12, fontFamily: 'var(--font-mono)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-card)', color: 'var(--color-foreground)', outline: 'none', cursor: 'pointer' }}
           >
-            {actions.map((a) => <option key={a} value={a}>{a === 'all' ? 'Tous les types' : a}</option>)}
+            {actions.map((a) => <option key={a} value={a}>{a === 'all' ? tr.audit_filter_all_types : a}</option>)}
           </select>
           <input
             type="date"
@@ -75,7 +77,7 @@ export default function MembersAuditPage() {
               onClick={() => { setUserFilter('all'); setActionFilter('all'); setDateFilter('') }}
               style={{ padding: '7px 12px', fontSize: 12, fontFamily: 'var(--font-mono)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius)', background: 'var(--color-secondary)', cursor: 'pointer', color: 'var(--color-muted-foreground)' }}
             >
-              Réinitialiser
+              {tr.audit_reset_filters}
             </button>
           )}
         </div>
@@ -83,7 +85,7 @@ export default function MembersAuditPage() {
         {/* Log entries */}
         <div style={{ border: '1px solid var(--color-border)', borderRadius: 6, overflowX: 'auto', background: 'var(--color-card)' }}>
           {loading && (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>Chargement…</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>{tr.common_loading}</div>
           )}
           {!loading && filtered.map((entry, i) => {
             const ac = ACTION_COLORS[entry.action] || ACTION_COLORS.LECTURE
@@ -150,8 +152,8 @@ export default function MembersAuditPage() {
                     }}
                   >
                     {[
-                      { label: 'AVANT', value: entry.detailBefore ?? '—', bg: 'rgba(198,40,40,0.04)', border: 'rgba(198,40,40,0.15)' },
-                      { label: 'APRÈS', value: entry.detailAfter ?? '—', bg: 'rgba(46,125,50,0.04)', border: 'rgba(46,125,50,0.15)' },
+                      { label: tr.audit_before, value: entry.detailBefore ?? '—', bg: 'rgba(198,40,40,0.04)', border: 'rgba(198,40,40,0.15)' },
+                      { label: tr.audit_after, value: entry.detailAfter ?? '—', bg: 'rgba(46,125,50,0.04)', border: 'rgba(46,125,50,0.15)' },
                     ].map((col) => (
                       <div
                         key={col.label}
@@ -175,12 +177,12 @@ export default function MembersAuditPage() {
           })}
           {!loading && filtered.length === 0 && (
             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>
-              Aucune entrée pour ces filtres
+              {tr.audit_no_entries}
             </div>
           )}
         </div>
 
-        <Btn fullWidth variant="ghost" onClick={() => router.push('/members')}>← Retour à la liste</Btn>
+        <Btn fullWidth variant="ghost" onClick={() => router.push('/members')}>{tr.audit_back_to_list}</Btn>
       </div>
     </div>
   )

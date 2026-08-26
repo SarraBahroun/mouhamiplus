@@ -10,9 +10,11 @@ import { MemberRole, ROLE_META } from '@/lib/members-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MembersListPage() {
   const router = useRouter()
+  const { lang } = useLang()
   const { members, cases, toggleMemberStatus } = useAppData()
   const { hasPermission } = useSession()
   const { showToast } = useToast()
@@ -89,7 +91,7 @@ export default function MembersListPage() {
                   transition: 'all 0.12s',
                 }}
               >
-                {r === 'all' ? 'Tous' : ROLE_META[r].label}
+                {r === 'all' ? 'Tous' : ROLE_META[r].label[lang]}
               </button>
             ))}
           </div>

@@ -1,3 +1,5 @@
+import { Lang } from './i18n'
+
 export type CaseStatus =
   | 'opened'
   | 'amicable'
@@ -70,17 +72,57 @@ export interface Case {
 // (Tribunal de première instance → Cour d'appel → Cour de cassation). Le
 // personnel peut sauter des étapes (ex. passer directement de "Ouverture" à
 // "Clôturé" pour un dossier de conseil qui ne va jamais en justice).
-export const CASE_STATUS_META: Record<CaseStatus, { label: string; color: string; bg: string }> = {
-  opened: { label: 'Ouverture du dossier', color: '#546E7A', bg: 'rgba(84,110,122,0.08)' },
-  amicable: { label: 'Phase amiable', color: '#E65100', bg: 'rgba(230,81,0,0.08)' },
-  filed: { label: 'Instance introduite', color: '#1565C0', bg: 'rgba(21,101,192,0.08)' },
-  instruction: { label: 'Instruction / mise en état', color: '#00838F', bg: 'rgba(0,131,143,0.08)' },
-  pleading: { label: 'Plaidoirie', color: '#3949AB', bg: 'rgba(57,73,171,0.08)' },
-  first_instance_judgment: { label: 'Jugement rendu (1ère instance)', color: '#2E7D32', bg: 'rgba(46,125,50,0.08)' },
-  appeal: { label: 'Appel', color: '#6A1B9A', bg: 'rgba(106,27,154,0.08)' },
-  cassation: { label: 'Cassation', color: '#AD1457', bg: 'rgba(173,20,87,0.08)' },
-  execution: { label: 'Exécution', color: '#BF360C', bg: 'rgba(191,54,12,0.08)' },
-  closed: { label: 'Clôturé / Archivé', color: '#37474F', bg: 'rgba(55,71,79,0.08)' },
+export const CASE_STATUS_META: Record<CaseStatus, { label: Record<Lang, string>; color: string; bg: string }> = {
+  opened: {
+    label: { fr: 'Ouverture du dossier', ar: 'فتح الملف', en: 'Case opened' },
+    color: '#546E7A',
+    bg: 'rgba(84,110,122,0.08)',
+  },
+  amicable: {
+    label: { fr: 'Phase amiable', ar: 'مرحلة الصلح', en: 'Amicable settlement' },
+    color: '#E65100',
+    bg: 'rgba(230,81,0,0.08)',
+  },
+  filed: {
+    label: { fr: 'Instance introduite', ar: 'رفع الدعوى', en: 'Case filed' },
+    color: '#1565C0',
+    bg: 'rgba(21,101,192,0.08)',
+  },
+  instruction: {
+    label: { fr: 'Instruction / mise en état', ar: 'التحقيق / إعداد الملف', en: 'Investigation / preparation' },
+    color: '#00838F',
+    bg: 'rgba(0,131,143,0.08)',
+  },
+  pleading: {
+    label: { fr: 'Plaidoirie', ar: 'المرافعة', en: 'Pleading' },
+    color: '#3949AB',
+    bg: 'rgba(57,73,171,0.08)',
+  },
+  first_instance_judgment: {
+    label: { fr: 'Jugement rendu (1ère instance)', ar: 'صدور الحكم (الدرجة الأولى)', en: 'Judgment rendered (first instance)' },
+    color: '#2E7D32',
+    bg: 'rgba(46,125,50,0.08)',
+  },
+  appeal: {
+    label: { fr: 'Appel', ar: 'الاستئناف', en: 'Appeal' },
+    color: '#6A1B9A',
+    bg: 'rgba(106,27,154,0.08)',
+  },
+  cassation: {
+    label: { fr: 'Cassation', ar: 'التعقيب', en: 'Cassation' },
+    color: '#AD1457',
+    bg: 'rgba(173,20,87,0.08)',
+  },
+  execution: {
+    label: { fr: 'Exécution', ar: 'التنفيذ', en: 'Execution' },
+    color: '#BF360C',
+    bg: 'rgba(191,54,12,0.08)',
+  },
+  closed: {
+    label: { fr: 'Clôturé / Archivé', ar: 'مغلق / مؤرشف', en: 'Closed / Archived' },
+    color: '#37474F',
+    bg: 'rgba(55,71,79,0.08)',
+  },
 }
 
 export const initialCases: Case[] = [

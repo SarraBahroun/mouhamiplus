@@ -6,11 +6,13 @@ import { Card } from '@/components/ui/Card'
 import { Divider } from '@/components/ui/Divider'
 import { Btn } from '@/components/ui/Btn'
 import { BANK_TRANSFER_INFO, planById } from '@/lib/billing'
+import { useLang } from '@/providers/LangProvider'
 import { submitPaymentReceipt } from './actions'
 
 function RegisterPaymentForm() {
   const router = useRouter()
   const params = useSearchParams()
+  const { tr } = useLang()
   const planId = params.get('plan') ?? ''
   const plan = planById(planId)
 
@@ -20,7 +22,7 @@ function RegisterPaymentForm() {
 
   const submit = async () => {
     if (!file) {
-      setError('Merci de joindre une photo du justificatif de virement.')
+      setError(tr.payment_missing_receipt_error)
       return
     }
     setError('')
@@ -42,9 +44,9 @@ function RegisterPaymentForm() {
       <Card style={{ maxWidth: 480 }}>
         <div className="flex flex-col gap-4">
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Choisissez d&apos;abord un forfait.
+            {tr.payment_choose_plan_first}
           </p>
-          <Btn fullWidth onClick={() => router.push('/register/plan')}>Choisir un forfait</Btn>
+          <Btn fullWidth onClick={() => router.push('/register/plan')}>{tr.payment_choose_plan_btn}</Btn>
         </div>
       </Card>
     )
@@ -55,14 +57,14 @@ function RegisterPaymentForm() {
       <div className="flex flex-col gap-5">
         <div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: '0 0 4px' }}>
-            Paiement par virement bancaire
+            {tr.payment_title}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Forfait <strong>{plan.name}</strong> — {plan.priceLabel}
+            {tr.payment_plan_line} <strong>{plan.name}</strong> — {plan.priceLabel}
           </p>
         </div>
 
-        <Divider text="COORDONNÉES BANCAIRES" />
+        <Divider text={tr.payment_bank_details_divider} />
 
         <div
           style={{
@@ -75,16 +77,15 @@ function RegisterPaymentForm() {
             gap: 6,
           }}
         >
-          <Row label="Banque" value={BANK_TRANSFER_INFO.bankName} />
-          <Row label="Titulaire" value={BANK_TRANSFER_INFO.accountHolder} />
-          <Row label="RIB" value={BANK_TRANSFER_INFO.rib} />
+          <Row label={tr.bank_name_label} value={BANK_TRANSFER_INFO.bankName} />
+          <Row label={tr.account_holder_label} value={BANK_TRANSFER_INFO.accountHolder} />
+          <Row label={tr.rib_label} value={BANK_TRANSFER_INFO.rib} />
         </div>
         <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          Effectuez le virement du montant du forfait choisi, puis joignez une photo lisible du reçu de virement ci-dessous.
-          Votre compte sera activé immédiatement après l&apos;envoi du justificatif.
+          {tr.payment_instructions}
         </p>
 
-        <Divider text="JUSTIFICATIF" />
+        <Divider text={tr.payment_proof_divider} />
 
         <label
           style={{
@@ -107,9 +108,9 @@ function RegisterPaymentForm() {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
           <span style={{ fontSize: 13, color: 'var(--color-foreground)', fontWeight: 500 }}>
-            {file ? file.name : 'Choisir une photo ou un PDF du reçu'}
+            {file ? file.name : tr.payment_file_placeholder}
           </span>
-          <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>8 Mo maximum</span>
+          <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>{tr.payment_file_maxsize}</span>
         </label>
 
         {error && (
@@ -118,9 +119,9 @@ function RegisterPaymentForm() {
 
         <div className="flex flex-col gap-2">
           <Btn fullWidth disabled={!file || loading} onClick={submit}>
-            {loading ? '…' : 'Envoyer le justificatif'}
+            {loading ? '…' : tr.payment_submit_btn}
           </Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/plan')}>Retour</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/register/plan')}>{tr.back}</Btn>
         </div>
       </div>
     </Card>

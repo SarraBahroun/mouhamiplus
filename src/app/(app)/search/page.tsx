@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
 interface SearchResult {
   type: 'Dossier' | 'Client' | 'Document'
@@ -15,21 +16,28 @@ interface SearchResult {
 export default function SearchPage() {
   const router = useRouter()
   const { cases, clients } = useAppData()
+  const { tr } = useLang()
   const [query, setQuery] = useState('')
+
+  const TYPE_LABEL: Record<SearchResult['type'], string> = {
+    Dossier: tr.shell_case_file,
+    Client: tr.shell_client_role,
+    Document: tr.search_type_document,
+  }
 
   const results: SearchResult[] = [
     ...cases.map((c): SearchResult => ({
       type: 'Dossier',
       icon: '📁',
       title: c.title,
-      sub: `Réf. ${c.reference} · ${c.practiceArea || 'Domaine non précisé'}`,
+      sub: `${tr.search_ref_prefix} ${c.reference} · ${c.practiceArea || tr.search_practice_area_unspecified}`,
       href: `/cases/${c.id}`,
     })),
     ...clients.map((c): SearchResult => ({
       type: 'Client',
       icon: c.type === 'company' ? '🏢' : '🧑‍💼',
       title: c.name,
-      sub: `${c.type === 'company' ? 'Entreprise' : 'Particulier'} · ${c.city || 'Ville non précisée'}`,
+      sub: `${c.type === 'company' ? tr.search_client_type_company : tr.search_client_type_individual} · ${c.city || tr.search_city_unspecified}`,
       href: `/clients/${c.id}`,
     })),
     ...cases.flatMap((c) => c.documents.map((d): SearchResult => ({
@@ -49,16 +57,16 @@ export default function SearchPage() {
     <div>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Recherche</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.nav_search}</h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Recherchez à travers vos dossiers, clients et documents
+            {tr.search_subtitle}
           </p>
         </div>
 
         <div style={{ position: 'relative' }}>
           <svg
             width="16" height="16" viewBox="0 0 16 16" fill="var(--color-muted-foreground)"
-            style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+            style={{ position: 'absolute', insetInlineStart: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
           >
             <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
             <path d="M12 12l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -66,11 +74,12 @@ export default function SearchPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un dossier, un client, un document…"
+            placeholder={tr.search_placeholder}
             autoFocus
             style={{
               width: '100%',
-              padding: '13px 14px 13px 38px',
+              padding: '13px 14px',
+              paddingInlineStart: 38,
               border: '1.5px solid var(--color-border)',
               borderRadius: 'var(--radius)',
               fontSize: 15,
@@ -84,11 +93,11 @@ export default function SearchPage() {
 
         <div>
           <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)', margin: '0 0 8px' }}>
-            {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}{query ? ` pour "${query}"` : ''}
+            {filtered.length} {filtered.length !== 1 ? tr.search_result_plural : tr.search_result_singular}{query ? ` ${tr.search_results_for} "${query}"` : ''}
           </p>
           <div style={{ border: '1px solid var(--color-border)', borderRadius: 6, overflow: 'hidden', background: 'var(--color-card)' }}>
             {filtered.length === 0 && (
-              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>Aucun résultat</div>
+              <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>{tr.common_no_results}</div>
             )}
             {filtered.map((r, i) => (
               <div
@@ -111,7 +120,7 @@ export default function SearchPage() {
                   <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{r.sub}</div>
                 </div>
                 <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 600, padding: '2px 7px', background: 'var(--color-secondary)', borderRadius: 3, color: 'var(--color-muted-foreground)' }}>
-                  {r.type.toUpperCase()}
+                  {TYPE_LABEL[r.type].toUpperCase()}
                 </span>
               </div>
             ))}

@@ -8,6 +8,7 @@ import { COURTS_OF_APPEAL_GROUPS, OTHER_COURTS } from '@/lib/tunisian-courts'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useSession } from '@/providers/SessionProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 const MAX_DOCUMENT_SIZE = 15 * 1024 * 1024
 const ALLOWED_DOCUMENT_TYPES = [
@@ -27,6 +28,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params)
   const router = useRouter()
   const { showToast } = useToast()
+  const { lang } = useLang()
   const { cases, clients, members, toggleCaseTask, addCaseTask, deleteCaseTask, addCaseDocument, getDocumentUrl, addCaseNote, addCaseMessage, addCaseHearing, loading } = useAppData()
   const { currentUserName } = useSession()
   const caseData = cases.find((c) => c.id === id)
@@ -147,7 +149,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
           <div className="flex items-center gap-3 flex-wrap">
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: 0 }}>{caseData.title}</h2>
             <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>
-              {meta.label}
+              {meta.label[lang]}
             </span>
           </div>
           <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 16 }}>
@@ -202,7 +204,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
                 { label: 'Client', value: client?.name ?? '—' },
                 { label: 'Domaine', value: caseData.practiceArea },
                 { label: 'Avocat assigné', value: assignee ? `${assignee.firstName} ${assignee.lastName}` : '—' },
-                { label: 'Statut', value: meta.label },
+                { label: 'Statut', value: meta.label[lang] },
                 { label: 'Date d\'ouverture', value: new Date(caseData.openedAt).toLocaleDateString('fr-FR') },
                 { label: 'Prochaine audience', value: caseData.nextHearing ? new Date(caseData.nextHearing).toLocaleDateString('fr-FR') : 'Aucune' },
               ].map((row) => (

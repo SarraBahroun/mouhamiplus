@@ -6,6 +6,7 @@ import { Btn } from '@/components/ui/Btn'
 import { RoleBadge } from '@/components/members/RoleBadge'
 import { MemberRole, ROLE_META } from '@/lib/members-data'
 import { useSession } from '@/providers/SessionProvider'
+import { useLang } from '@/providers/LangProvider'
 
 type AssignableRole = MemberRole
 
@@ -86,6 +87,7 @@ const perms: Record<AssignableRole, { label: string; granted: boolean }[]> = {
 
 export default function MembersAddRolePage() {
   const router = useRouter()
+  const { lang } = useLang()
   const { realProfile } = useSession()
   const [selected, setSelected] = useState<AssignableRole | null>(null)
   // Seul un avocat associé peut en désigner un autre — le serveur applique la même règle.
@@ -144,10 +146,10 @@ export default function MembersAddRolePage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>{m.label}</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{m.label[lang]}</span>
                     <RoleBadge role={role} />
                   </div>
-                  <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--color-muted-foreground)' }}>{m.desc}</p>
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--color-muted-foreground)' }}>{m.desc[lang]}</p>
                   {isSelected && (
                     <div className="flex flex-wrap gap-1.5">
                       {perms[role].map((p) => (

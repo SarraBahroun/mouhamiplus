@@ -3,6 +3,7 @@
 import { CASE_STATUS_META } from '@/lib/cases-data'
 import { INVOICE_STATUS_META, InvoiceStatus } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
 function BarChart({ data, unit }: { data: { key: string; label: string; color: string; value: number }[]; unit?: string }) {
   const max = Math.max(...data.map((d) => d.value), 1)
@@ -32,11 +33,12 @@ function BarChart({ data, unit }: { data: { key: string; label: string; color: s
 }
 
 export default function ReportsPage() {
+  const { lang } = useLang()
   const { cases, invoices } = useAppData()
   const caseCounts = (Object.keys(CASE_STATUS_META) as (keyof typeof CASE_STATUS_META)[])
     .map((s) => ({
       key: s,
-      label: CASE_STATUS_META[s].label,
+      label: CASE_STATUS_META[s].label[lang],
       color: CASE_STATUS_META[s].color,
       value: cases.filter((c) => c.status === s).length,
     }))

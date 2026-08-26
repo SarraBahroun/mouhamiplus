@@ -11,11 +11,13 @@ import { BaseMemberFields, MemberFormFields } from '@/components/members/BaseMem
 import { ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useToast } from '@/providers/ToastProvider'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function MembersFormSecretaryPage() {
   const router = useRouter()
   const { showToast } = useToast()
   const { addMember, setMemberPermissionOverride } = useAppData()
+  const { tr } = useLang()
   const [form, setForm] = useState<MemberFormFields>({ firstName: '', lastName: '', email: '', phone: '' })
   const [perms, setPerms] = useState({ finance: false, ai: false })
   const [error, setError] = useState('')
@@ -38,7 +40,7 @@ export default function MembersFormSecretaryPage() {
     }
     setLoading(false)
     sessionStorage.setItem(`mouhamiplus-member-access-${result.id}`, JSON.stringify({ tempPassword: result.tempPassword }))
-    showToast(result.emailed ? 'Compte créé — identifiants envoyés par e-mail' : 'Compte créé — mot de passe temporaire disponible sur la fiche du membre')
+    showToast(result.emailed ? tr.member_add_toast_emailed : tr.member_add_toast_temp_password)
     router.push(`/members/${result.id}`)
   }
 
@@ -48,21 +50,21 @@ export default function MembersFormSecretaryPage() {
         <div className="flex items-center gap-3">
           <RoleBadge role="secretary" size="md" />
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, margin: 0 }}>
-            Création secrétaire
+            {tr.member_add_secretary_title}
           </h1>
         </div>
 
         <BaseMemberFields form={form} setForm={setForm} />
 
-        <Divider text="PERMISSIONS" />
+        <Divider text={tr.member_secretary_permissions_divider} />
 
         <div className="flex flex-col gap-3">
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Les permissions suivantes sont désactivées par défaut pour ce rôle.
+            {tr.member_secretary_permissions_intro}
           </p>
           {[
-            { key: 'finance' as const, label: 'Accès module Finance', desc: 'Consultation des honoraires et factures' },
-            { key: 'ai' as const, label: 'Accès module IA', desc: "Utilisation des outils d'intelligence artificielle" },
+            { key: 'finance' as const, label: tr.member_secretary_finance_label, desc: tr.member_secretary_finance_desc },
+            { key: 'ai' as const, label: tr.member_secretary_ai_label, desc: tr.member_secretary_ai_desc },
           ].map((p) => (
             <div
               key={p.key}
@@ -92,8 +94,8 @@ export default function MembersFormSecretaryPage() {
         {error && <p style={{ fontSize: 12, color: 'var(--color-error)', margin: 0 }}>{error}</p>}
 
         <div className="flex flex-col gap-2">
-          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : 'Créer le compte secrétaire'}</Btn>
-          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>Retour</Btn>
+          <Btn fullWidth onClick={submit} disabled={loading}>{loading ? '…' : tr.member_create_secretary_button}</Btn>
+          <Btn fullWidth variant="ghost" onClick={() => router.push('/members/add')}>{tr.shell_back}</Btn>
         </div>
       </div>
     </Card>

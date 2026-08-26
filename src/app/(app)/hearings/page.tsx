@@ -2,9 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
+
+const LOCALE: Record<string, string> = { fr: 'fr-FR', ar: 'ar-TN', en: 'en-US' }
 
 export default function HearingsPage() {
   const router = useRouter()
+  const { tr, lang } = useLang()
+  const locale = LOCALE[lang]
   const { cases, clients } = useAppData()
 
   const hearings = cases
@@ -18,7 +23,7 @@ export default function HearingsPage() {
   const courtsCount = new Set(hearings.map((h) => h.court)).size
 
   const courtCounts = hearings.reduce<Record<string, number>>((acc, h) => {
-    const court = h.court || 'Non renseigné'
+    const court = h.court || tr.hearings_court_unknown
     acc[court] = (acc[court] ?? 0) + 1
     return acc
   }, {})
@@ -26,19 +31,24 @@ export default function HearingsPage() {
   const maxCourtCount = Math.max(1, ...byCourt.map(([, n]) => n))
 
   const stats = [
-    { label: 'Audiences programmées', value: String(hearings.length), sub: 'toutes dates confondues', icon: '⚖️' },
-    { label: 'À venir', value: String(upcoming.length), sub: upcoming[0] ? `Prochaine le ${new Date(upcoming[0].date).toLocaleDateString('fr-FR')}` : 'Aucune programmée', icon: '📅' },
-    { label: 'Cette semaine', value: String(thisWeek.length), sub: '7 prochains jours', icon: '🗓️' },
-    { label: 'Juridictions', value: String(courtsCount), sub: 'tribunaux distincts', icon: '🏛️' },
+    { label: tr.hearings_stat_total_label, value: String(hearings.length), sub: tr.hearings_stat_total_sub, icon: '⚖️' },
+    {
+      label: tr.hearings_stat_upcoming_label,
+      value: String(upcoming.length),
+      sub: upcoming[0] ? tr.hearings_stat_next.replace('{date}', new Date(upcoming[0].date).toLocaleDateString(locale)) : tr.hearings_stat_none_scheduled,
+      icon: '📅',
+    },
+    { label: tr.common_this_week, value: String(thisWeek.length), sub: tr.hearings_stat_week_sub, icon: '🗓️' },
+    { label: tr.hearings_stat_courts_label, value: String(courtsCount), sub: tr.hearings_stat_courts_sub, icon: '🏛️' },
   ]
 
   return (
     <div>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Audiences</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.nav_hearings}</h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            {hearings.length} audiences programmées
+            {tr.hearings_total_count.replace('{n}', String(hearings.length))}
           </p>
         </div>
 
@@ -56,7 +66,7 @@ export default function HearingsPage() {
 
         {hearings.length === 0 && (
           <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14, border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-card)' }}>
-            Aucune audience programmée
+            {tr.hearings_empty}
           </div>
         )}
 
@@ -78,19 +88,19 @@ export default function HearingsPage() {
             >
               <div style={{ width: 48, textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--color-primary)' }}>
-                  {new Date(h.date).toLocaleDateString('fr-FR', { day: '2-digit' })}
+                  {new Date(h.date).toLocaleDateString(locale, { day: '2-digit' })}
                 </div>
                 <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>
-                  {new Date(h.date).toLocaleDateString('fr-FR', { month: 'short' })}
+                  {new Date(h.date).toLocaleDateString(locale, { month: 'short' })}
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>{h.note}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{h.case.title} · {clients.find((cl) => cl.id === h.case.clientId)?.name}</div>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ textAlign: 'end', flexShrink: 0 }}>
                 <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)' }}>
-                  {new Date(h.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(h.date).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-muted-foreground)' }}>{h.court}</div>
               </div>
@@ -102,7 +112,7 @@ export default function HearingsPage() {
         {byCourt.length > 0 && (
           <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 14px' }}>
-              Répartition par tribunal
+              {tr.hearings_by_court_title}
             </h2>
             <div className="flex flex-col gap-3">
               {byCourt.map(([court, count]) => (

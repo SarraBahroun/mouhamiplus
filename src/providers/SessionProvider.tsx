@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { ROLE_META, MemberRole } from '@/lib/members-data'
 import { PermissionKey, ROLE_DEFAULT_PERMISSIONS } from '@/lib/permissions'
 import { useAppData } from './AppDataProvider'
+import { useLang } from './LangProvider'
 import { createClient } from '@/lib/supabase/client'
 
 /** 'self' = l'utilisateur réellement authentifié. Un id membre = mode "voir en tant que" (démo/permissions). */
@@ -38,6 +39,7 @@ const SessionContext = createContext<SessionContextValue | null>(null)
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const { members, memberPermissionOverrides } = useAppData()
+  const { lang } = useLang()
   const [currentUserId, setCurrentUserId] = useState<CurrentUserId>('self')
   const [realProfile, setRealProfile] = useState<RealProfile | null>(null)
   const [cabinetId, setCabinetId] = useState<string | null>(null)
@@ -106,8 +108,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     : `${currentMember?.firstName ?? ''} ${currentMember?.lastName ?? ''}`.trim()
 
   const currentUserRoleLabel = currentUserId === 'self'
-    ? (realProfile ? ROLE_META[realProfile.role].label : '')
-    : currentMember ? ROLE_META[currentMember.role].label : ''
+    ? (realProfile ? ROLE_META[realProfile.role].label[lang] : '')
+    : currentMember ? ROLE_META[currentMember.role].label[lang] : ''
 
   const currentUserInitials = currentUserId === 'self'
     ? (realProfile ? `${realProfile.firstName[0] ?? ''}${realProfile.lastName[0] ?? ''}`.toUpperCase() || '??' : '??')

@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useLang } from '@/providers/LangProvider'
 
 export function LegalPageShell({
   title,
@@ -9,8 +12,10 @@ export function LegalPageShell({
   updated: string
   children: React.ReactNode
 }) {
+  const { tr, rtl } = useLang()
+
   return (
-    <div style={{ background: '#FFFCF6', minHeight: '100vh' }}>
+    <div dir={rtl ? 'rtl' : 'ltr'} style={{ background: '#FFFCF6', minHeight: '100vh' }}>
       <div
         style={{
           background: 'linear-gradient(160deg, var(--color-navy) 0%, var(--color-navy-deep) 100%)',
@@ -39,8 +44,9 @@ export function LegalPageShell({
               Mouhami<span style={{ color: 'var(--color-sky)' }}>+</span>
             </span>
           </Link>
-          <Link href="/" style={{ fontSize: 13, color: 'var(--color-sky-soft)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>
-            ← Retour à l&apos;accueil
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--color-sky-soft)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>
+            <span aria-hidden="true">{rtl ? '→' : '←'}</span>
+            {tr.shell_home_aria}
           </Link>
         </div>
       </div>
@@ -49,12 +55,12 @@ export function LegalPageShell({
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 34, fontWeight: 600, color: 'var(--color-navy)', margin: '0 0 8px' }}>
           {title}
         </h1>
-        <p style={{ fontSize: 13, color: '#5C6472', margin: '0 0 40px' }}>Dernière mise à jour : {updated}</p>
+        <p style={{ fontSize: 13, color: '#5C6472', margin: '0 0 40px' }}>{tr.mk_legal_updated_label} {updated}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>{children}</div>
       </main>
 
       <footer style={{ background: 'var(--color-navy-deep)', padding: '24px', textAlign: 'center' }}>
-        <span style={{ fontSize: 11, color: 'rgba(169,214,242,0.5)' }}>© 2026 Mouhami+. Tous droits réservés.</span>
+        <span style={{ fontSize: 11, color: 'rgba(169,214,242,0.5)' }}>{tr.home_copyright}</span>
       </footer>
     </div>
   )

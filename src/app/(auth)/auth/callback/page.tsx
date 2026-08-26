@@ -6,10 +6,12 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 import { Card } from '@/components/ui/Card'
 import { Btn } from '@/components/ui/Btn'
 import { createClient } from '@/lib/supabase/client'
+import { useLang } from '@/providers/LangProvider'
 
 function AuthCallbackScreen() {
   const router = useRouter()
   const params = useSearchParams()
+  const { tr } = useLang()
   const next = params.get('next') || '/register/plan'
   const code = params.get('code')
   const tokenHash = params.get('token_hash')
@@ -31,7 +33,7 @@ function AuthCallbackScreen() {
       if (tokenHash && otpType) {
         const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType })
         if (verifyError) {
-          setError("Ce lien a expiré ou est invalide. Merci de relancer la réinitialisation du mot de passe.")
+          setError(tr.callback_expired_reset)
           return
         }
         router.replace(next)
@@ -43,7 +45,7 @@ function AuthCallbackScreen() {
       if (code) {
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         if (exchangeError) {
-          setError("Ce lien a expiré ou est invalide. Merci de relancer la réinitialisation du mot de passe.")
+          setError(tr.callback_expired_reset)
           return
         }
         router.replace(next)
@@ -52,22 +54,23 @@ function AuthCallbackScreen() {
 
       const { data, error: sessionError } = await supabase.auth.getSession()
       if (sessionError || !data.session) {
-        setError("Ce lien de confirmation est invalide ou a expiré. Merci de renvoyer l'email depuis la page d'inscription.")
+        setError(tr.callback_invalid_confirm)
         return
       }
       router.replace(next)
     }
 
     run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tr change à chaque bascule de langue ; l'effet ne doit ré-exécuter l'échange de session que si les paramètres d'URL changent, pas la langue
   }, [router, next, code, tokenHash, otpType, errorDescription])
 
   return (
     <Card style={{ maxWidth: 420 }}>
       <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <p style={{ fontSize: 13, color: (linkError || error) ? 'var(--color-error)' : 'var(--color-muted-foreground)', margin: 0 }}>
-          {linkError || error || 'Confirmation en cours…'}
+          {linkError || error || tr.callback_in_progress}
         </p>
-        {(linkError || error) && <Btn onClick={() => router.push('/reset-password')}>Relancer la réinitialisation</Btn>}
+        {(linkError || error) && <Btn onClick={() => router.push('/reset-password')}>{tr.callback_retry_btn}</Btn>}
       </div>
     </Card>
   )

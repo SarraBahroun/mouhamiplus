@@ -8,15 +8,23 @@ import { SelectInput } from '@/components/ui/SelectInput'
 import { INVOICE_STATUS_META, InvoiceStatus } from '@/lib/finance-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useToast } from '@/providers/ToastProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function InvoicesPage() {
   const router = useRouter()
   const { showToast } = useToast()
+  const { tr } = useLang()
   const { invoices, clients, cases, addInvoice, updateInvoiceStatus } = useAppData()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ clientId: '', caseId: '', amount: '', vatRate: '19', stampDuty: '1', dueAt: '' })
   const [loading, setLoading] = useState(false)
   const f = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }))
+
+  const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {
+    paid: tr.invoices_status_paid,
+    pending: tr.common_pending,
+    overdue: tr.invoices_status_overdue,
+  }
 
   const ttc = (i: { amount: number; vatRate: number; stampDuty: number }) =>
     i.amount * (1 + i.vatRate / 100) + i.stampDuty
@@ -27,10 +35,10 @@ export default function InvoicesPage() {
   const overdue = invoices.filter((i) => i.status === 'overdue').reduce((sum, i) => sum + ttc(i), 0)
 
   const stats = [
-    { label: 'Total facturé (TTC)', value: `${total.toLocaleString('fr-FR')} DT`, sub: `${invoices.length} facture${invoices.length !== 1 ? 's' : ''}`, icon: '📄' },
-    { label: 'Payées', value: `${paid.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'paid').length} facture${invoices.filter((i) => i.status === 'paid').length !== 1 ? 's' : ''}`, icon: '✅' },
-    { label: 'En attente', value: `${pending.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'pending').length} facture${invoices.filter((i) => i.status === 'pending').length !== 1 ? 's' : ''}`, icon: '⏳' },
-    { label: 'En retard', value: `${overdue.toLocaleString('fr-FR')} DT`, sub: `${invoices.filter((i) => i.status === 'overdue').length} facture${invoices.filter((i) => i.status === 'overdue').length !== 1 ? 's' : ''}`, icon: '⚠️' },
+    { label: tr.invoices_stat_total_label, value: `${total.toLocaleString('fr-FR')} DT`, sub: tr.invoices_count_label.replace('{count}', String(invoices.length)), icon: '📄' },
+    { label: tr.invoices_stat_paid_label, value: `${paid.toLocaleString('fr-FR')} DT`, sub: tr.invoices_count_label.replace('{count}', String(invoices.filter((i) => i.status === 'paid').length)), icon: '✅' },
+    { label: tr.common_pending, value: `${pending.toLocaleString('fr-FR')} DT`, sub: tr.invoices_count_label.replace('{count}', String(invoices.filter((i) => i.status === 'pending').length)), icon: '⏳' },
+    { label: tr.invoices_stat_overdue_label, value: `${overdue.toLocaleString('fr-FR')} DT`, sub: tr.invoices_count_label.replace('{count}', String(invoices.filter((i) => i.status === 'overdue').length)), icon: '⚠️' },
   ]
 
   const casesForClient = cases.filter((c) => c.clientId === form.clientId)
@@ -49,8 +57,8 @@ export default function InvoicesPage() {
       dueAt: form.dueAt || undefined,
     })
     setLoading(false)
-    if (!id) { showToast('Échec de la création de la facture'); return }
-    showToast('Facture créée')
+    if (!id) { showToast(tr.invoices_toast_error); return }
+    showToast(tr.invoices_toast_success)
     setForm({ clientId: '', caseId: '', amount: '', vatRate: '19', stampDuty: '1', dueAt: '' })
     setShowForm(false)
   }
@@ -64,12 +72,12 @@ export default function InvoicesPage() {
       <div className="flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Factures</h1>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.invoices_title}</h1>
             <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-              {invoices.length} facture{invoices.length !== 1 ? 's' : ''} · {total.toLocaleString('fr-FR')} DT au total
+              {tr.invoices_subtitle_count.replace('{count}', String(invoices.length)).replace('{total}', total.toLocaleString('fr-FR'))}
             </p>
           </div>
-          <Btn onClick={() => setShowForm((s) => !s)}>{showForm ? 'Annuler' : '+ Nouvelle facture'}</Btn>
+          <Btn onClick={() => setShowForm((s) => !s)}>{showForm ? tr.common_cancel : `+ ${tr.invoices_new_title}`}</Btn>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
@@ -85,37 +93,37 @@ export default function InvoicesPage() {
 
         {showForm && (
           <div style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderRadius: 6, padding: '18px 20px', maxWidth: 480 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>Nouvelle facture</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>{tr.invoices_new_title}</h2>
             <div className="flex flex-col gap-3">
               <SelectInput
-                label="Client"
+                label={tr.billing_client_label}
                 value={form.clientId}
                 onChange={(v) => setForm((p) => ({ ...p, clientId: v, caseId: '' }))}
-                options={[{ value: '', label: '— Sélectionner un client —' }, ...clients.map((c) => ({ value: c.id, label: c.name }))]}
+                options={[{ value: '', label: tr.billing_select_client_placeholder }, ...clients.map((c) => ({ value: c.id, label: c.name }))]}
               />
               <SelectInput
-                label="Dossier (optionnel)"
+                label={tr.billing_case_optional_label}
                 value={form.caseId}
                 onChange={f('caseId')}
-                options={[{ value: '', label: '— Aucun —' }, ...casesForClient.map((c) => ({ value: c.id, label: c.title }))]}
+                options={[{ value: '', label: tr.billing_none_placeholder }, ...casesForClient.map((c) => ({ value: c.id, label: c.title }))]}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Montant HT (DT)" type="number" value={form.amount} onChange={f('amount')} placeholder="2400" />
-                <Input label="Échéance" type="date" value={form.dueAt} onChange={f('dueAt')} />
+                <Input label={tr.invoices_amount_ht_label} type="number" value={form.amount} onChange={f('amount')} placeholder="2400" />
+                <Input label={tr.invoices_due_date_label} type="date" value={form.dueAt} onChange={f('dueAt')} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Taux TVA (%)" type="number" value={form.vatRate} onChange={f('vatRate')} placeholder="19" />
-                <Input label="Timbre fiscal (DT)" type="number" value={form.stampDuty} onChange={f('stampDuty')} placeholder="1" />
+                <Input label={tr.invoices_vat_rate_label} type="number" value={form.vatRate} onChange={f('vatRate')} placeholder="19" />
+                <Input label={tr.invoices_stamp_duty_label} type="number" value={form.stampDuty} onChange={f('stampDuty')} placeholder="1" />
               </div>
               <p style={{ fontSize: 11, color: 'var(--color-muted-foreground)', margin: 0 }}>
-                Taux par défaut à titre indicatif — à confirmer avec votre comptable selon votre régime (les honoraires d&apos;avocat peuvent relever d&apos;un taux de TVA différent du taux normal).
+                {tr.invoices_vat_disclaimer}
               </p>
               {form.amount && (
                 <p style={{ fontSize: 13, color: 'var(--color-foreground)', margin: 0 }}>
-                  Total TTC : <strong>{formTtc.toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT</strong>
+                  {tr.invoices_total_ttc_label}<strong>{formTtc.toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT</strong>
                 </p>
               )}
-              <Btn onClick={submit} disabled={loading || !form.clientId || !form.amount}>{loading ? '…' : 'Créer la facture'}</Btn>
+              <Btn onClick={submit} disabled={loading || !form.clientId || !form.amount}>{loading ? '…' : tr.invoices_submit_cta}</Btn>
             </div>
           </div>
         )}
@@ -131,14 +139,14 @@ export default function InvoicesPage() {
               background: 'var(--color-secondary)',
             }}
           >
-            {['N° facture', 'Client', 'Émise le', 'Montant', 'Statut'].map((h) => (
+            {[tr.invoices_col_number, tr.billing_client_label, tr.invoices_col_issued, tr.common_amount, tr.common_status].map((h) => (
               <span key={h} style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {h}
               </span>
             ))}
           </div>
           {invoices.length === 0 && (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>Aucune facture pour le moment</div>
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-muted-foreground)', fontSize: 14 }}>{tr.invoices_empty}</div>
           )}
           {invoices.map((inv, i) => {
             const meta = INVOICE_STATUS_META[inv.status]
@@ -164,10 +172,13 @@ export default function InvoicesPage() {
                 <span style={{ fontSize: 13, color: 'var(--color-foreground)' }}>{client?.name ?? '—'}</span>
                 <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{new Date(inv.issuedAt).toLocaleDateString('fr-FR')}</span>
                 <span
-                  title={`HT ${inv.amount.toLocaleString('fr-FR')} DT + TVA ${inv.vatRate}% + timbre ${inv.stampDuty.toLocaleString('fr-FR')} DT`}
+                  title={tr.invoices_tooltip_breakdown
+                    .replace('{ht}', inv.amount.toLocaleString('fr-FR'))
+                    .replace('{vat}', String(inv.vatRate))
+                    .replace('{stamp}', inv.stampDuty.toLocaleString('fr-FR'))}
                   style={{ fontSize: 13, color: 'var(--color-foreground)', cursor: 'help' }}
                 >
-                  {ttc(inv).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>TTC</span>
+                  {ttc(inv).toLocaleString('fr-FR', { maximumFractionDigits: 3 })} DT <span style={{ fontSize: 10, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>{tr.invoices_ttc_suffix}</span>
                 </span>
                 <select
                   value={inv.status}
@@ -185,7 +196,7 @@ export default function InvoicesPage() {
                   }}
                 >
                   {(Object.keys(INVOICE_STATUS_META) as InvoiceStatus[]).map((s) => (
-                    <option key={s} value={s}>{INVOICE_STATUS_META[s].label}</option>
+                    <option key={s} value={s}>{INVOICE_STATUS_LABEL[s]}</option>
                   ))}
                 </select>
               </div>

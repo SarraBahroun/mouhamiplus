@@ -5,6 +5,7 @@ import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
 import { useAppData } from '@/providers/AppDataProvider'
+import { useLang } from '@/providers/LangProvider'
 import { useSession } from '@/providers/SessionProvider'
 
 interface ScanResult {
@@ -23,7 +24,7 @@ const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 const ACCEPTED_EXT = '.pdf,.jpg,.jpeg,.png'
 const MAX_SIZE = 20 * 1024 * 1024
 
-async function pdfToPageCanvases(file: File): Promise<HTMLCanvasElement[]> {
+async function pdfToPageCanvases(file: File, errorMessage: string): Promise<HTMLCanvasElement[]> {
   const pdfjsLib = await import('pdfjs-dist')
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
 
@@ -39,20 +40,20 @@ async function pdfToPageCanvases(file: File): Promise<HTMLCanvasElement[]> {
     canvas.width = viewport.width
     canvas.height = viewport.height
     const context = canvas.getContext('2d')
-    if (!context) throw new Error("Impossible de préparer la page PDF pour la numérisation.")
+    if (!context) throw new Error(errorMessage)
     await page.render({ canvas, canvasContext: context, viewport }).promise
     canvases.push(canvas)
   }
   return canvases
 }
 
-async function imageFileToCanvas(file: File): Promise<HTMLCanvasElement> {
+async function imageFileToCanvas(file: File, errorMessage: string): Promise<HTMLCanvasElement> {
   const bitmap = await createImageBitmap(file)
   const canvas = document.createElement('canvas')
   canvas.width = bitmap.width
   canvas.height = bitmap.height
   const context = canvas.getContext('2d')
-  if (!context) throw new Error("Impossible de préparer l'image pour la numérisation.")
+  if (!context) throw new Error(errorMessage)
   context.drawImage(bitmap, 0, 0)
 
   // Étire le contraste (niveaux de gris + normalisation min/max) : les photos prises
@@ -82,6 +83,7 @@ async function imageFileToCanvas(file: File): Promise<HTMLCanvasElement> {
 export default function OcrPage() {
   const { cases: initialCases, addCaseDocument, addCaseNote } = useAppData()
   const { currentUserName } = useSession()
+  const { tr, rtl } = useLang()
   const [caseId, setCaseId] = useState('')
   const [scans, setScans] = useState<ScanResult[]>([])
   const [processing, setProcessing] = useState(false)
@@ -91,31 +93,33 @@ export default function OcrPage() {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const caseOptions = [{ value: '', label: 'Aucun dossier' }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]
+  const caseOptions = [{ value: '', label: tr.ocr_no_case_option }, ...initialCases.map((c) => ({ value: String(c.id), label: c.title }))]
 
   const processFile = useCallback(
     async (file: File) => {
       setError('')
       if (!ACCEPTED_TYPES.includes(file.type)) {
-        setError('Format non supporté. Utilisez un PDF, JPG ou PNG.')
+        setError(tr.ocr_error_unsupported_format)
         return
       }
       if (file.size > MAX_SIZE) {
-        setError('Fichier trop volumineux (20 Mo maximum).')
+        setError(tr.ocr_error_file_too_large)
         return
       }
 
       setProcessing(true)
       setProgress(0)
-      setProgressLabel('Préparation du document…')
+      setProgressLabel(tr.ocr_progress_preparing)
       try {
         const { recognize } = await import('tesseract.js')
-        const pages = file.type === 'application/pdf' ? await pdfToPageCanvases(file) : [await imageFileToCanvas(file)]
+        const pages = file.type === 'application/pdf'
+          ? await pdfToPageCanvases(file, tr.ocr_error_pdf_page_prep)
+          : [await imageFileToCanvas(file, tr.ocr_error_image_prep)]
         const totalPages = pages.length
 
         const texts: string[] = []
         for (let i = 0; i < pages.length; i += 1) {
-          if (totalPages > 1) setProgressLabel(`Page ${i + 1} sur ${totalPages}…`)
+          if (totalPages > 1) setProgressLabel(`${tr.ocr_progress_page_prefix} ${i + 1} ${tr.ocr_progress_page_of} ${totalPages}…`)
           const { data } = await recognize(pages[i], 'fra+ara', {
             logger: (m) => {
               if (m.status === 'recognizing text') {
@@ -144,14 +148,14 @@ export default function OcrPage() {
           ...prev,
         ])
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erreur lors de la numérisation du document.')
+        setError(e instanceof Error ? e.message : tr.ocr_error_scan_failed)
       } finally {
         setProcessing(false)
         setProgress(0)
         setProgressLabel('')
       }
     },
-    [caseId]
+    [caseId, tr]
   )
 
   const updateScanText = (id: number, text: string) => {
@@ -168,12 +172,12 @@ export default function OcrPage() {
     const uploaded = await addCaseDocument(scan.caseId, scan.file)
     if (!uploaded) {
       setScans((prev) =>
-        prev.map((s) => (s.id === scan.id ? { ...s, status: 'error', saveError: "L'ajout du document au dossier a échoué — réessayez." } : s))
+        prev.map((s) => (s.id === scan.id ? { ...s, status: 'error', saveError: tr.ocr_error_add_document_failed } : s))
       )
       return
     }
     if (scan.text) {
-      await addCaseNote(scan.caseId, currentUserName || 'Scanner OCR', `Texte extrait par OCR (${scan.name}) :\n${scan.text}`)
+      await addCaseNote(scan.caseId, currentUserName || tr.nav_ocr, `${tr.ocr_note_label} (${scan.name}) :\n${scan.text}`)
     }
     setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'saved' } : s)))
   }
@@ -181,7 +185,7 @@ export default function OcrPage() {
   const exportScanToPdf = async (scan: ScanResult) => {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-    await exportTextToPdfPages(doc, scan.text || '(Aucun texte détecté sur ce document.)')
+    await exportTextToPdfPages(doc, scan.text || tr.ocr_no_text_detected)
     doc.save(`${scan.name.replace(/\.[^.]+$/, '')}-ocr.pdf`)
   }
 
@@ -196,14 +200,14 @@ export default function OcrPage() {
     <div>
       <div className="flex flex-col gap-5">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>Scanner OCR</h1>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{tr.nav_ocr}</h1>
           <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-            Numérisez et extrayez le texte de vos documents papier
+            {tr.ocr_subtitle}
           </p>
         </div>
 
         <div style={{ maxWidth: 360 }}>
-          <SelectInput label="Dossier associé (optionnel)" value={caseId} onChange={setCaseId} options={caseOptions} />
+          <SelectInput label={tr.ocr_case_label} value={caseId} onChange={setCaseId} options={caseOptions} rtl={rtl} />
         </div>
 
         <input
@@ -243,7 +247,7 @@ export default function OcrPage() {
           {processing ? (
             <>
               <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)', margin: '0 0 10px' }}>
-                Numérisation en cours… {progress > 0 ? `${progress}%` : ''}
+                {tr.ocr_scanning_in_progress} {progress > 0 ? `${progress}%` : ''}
               </p>
               {progressLabel && (
                 <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 10px' }}>{progressLabel}</p>
@@ -255,13 +259,13 @@ export default function OcrPage() {
           ) : (
             <>
               <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)', margin: '0 0 4px' }}>
-                Glissez-déposez un fichier ou une photo ici
+                {tr.ocr_dropzone_title}
               </p>
               <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 16px' }}>
-                PDF, JPG, PNG — jusqu&apos;à 20 Mo
+                {tr.ocr_dropzone_hint}
               </p>
               <span onClick={(e) => e.stopPropagation()}>
-                <Btn onClick={openPicker}>Choisir un fichier</Btn>
+                <Btn onClick={openPicker}>{tr.ocr_choose_file}</Btn>
               </span>
             </>
           )}
@@ -275,11 +279,11 @@ export default function OcrPage() {
 
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, margin: '0 0 10px' }}>
-            Numérisations récentes
+            {tr.ocr_recent_title}
           </h2>
           {scans.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>
-              Aucune numérisation pour l&apos;instant. Déposez un document ci-dessus pour commencer.
+              {tr.ocr_recent_empty}
             </p>
           ) : (
             <div className="flex flex-col gap-4">
@@ -289,7 +293,7 @@ export default function OcrPage() {
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>
                       {s.name}
                       {s.pageCount > 1 && (
-                        <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontWeight: 400 }}> · {s.pageCount} pages</span>
+                        <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontWeight: 400 }}> · {s.pageCount} {tr.ocr_pages_suffix}</span>
                       )}
                     </span>
                     <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-muted-foreground)' }}>{s.date}</span>
@@ -298,7 +302,7 @@ export default function OcrPage() {
                   <textarea
                     value={s.text}
                     onChange={(e) => updateScanText(s.id, e.target.value)}
-                    placeholder="(Aucun texte détecté sur ce document.)"
+                    placeholder={tr.ocr_no_text_detected}
                     style={{
                       width: '100%',
                       minHeight: 160,
@@ -316,14 +320,14 @@ export default function OcrPage() {
 
                   <div className="flex items-end justify-between gap-3 mt-3 flex-wrap">
                     <div style={{ maxWidth: 280, width: '100%' }}>
-                      <SelectInput label="Dossier" value={s.caseId} onChange={(v) => updateScanCase(s.id, v)} options={caseOptions} />
+                      <SelectInput label={tr.shell_case_file} value={s.caseId} onChange={(v) => updateScanCase(s.id, v)} options={caseOptions} rtl={rtl} />
                     </div>
                     <div className="flex items-center gap-2">
                       <Btn variant="secondary" onClick={() => exportScanToPdf(s)}>
-                        Exporter en PDF
+                        {tr.ocr_export_pdf}
                       </Btn>
                       <Btn onClick={() => classifyScan(s)} disabled={!s.caseId || s.status === 'saving'}>
-                        {s.status === 'saved' ? 'Enregistré ✓' : s.status === 'saving' ? 'Classement…' : 'Classer dans le dossier'}
+                        {s.status === 'saved' ? tr.ocr_status_saved : s.status === 'saving' ? tr.ocr_status_saving : tr.ocr_classify_button}
                       </Btn>
                     </div>
                   </div>
@@ -333,7 +337,7 @@ export default function OcrPage() {
                   )}
                   {!s.caseId && s.status !== 'saved' && (
                     <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 8 }}>
-                      Choisissez un dossier pour pouvoir classer cette numérisation.
+                      {tr.ocr_choose_case_hint}
                     </div>
                   )}
                 </div>

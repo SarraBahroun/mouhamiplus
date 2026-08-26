@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation'
 import { CASE_STATUS_META } from '@/lib/cases-data'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useClientSession } from '@/providers/ClientSessionProvider'
+import { useLang } from '@/providers/LangProvider'
 
 export default function ClientCasesPage() {
   const router = useRouter()
+  const { lang } = useLang()
   const { clientProfile } = useClientSession()
   const { cases: allCases, members } = useAppData()
   const cases = allCases.filter((c) => c.clientId === clientProfile?.id)
@@ -53,7 +55,7 @@ export default function ClientCasesPage() {
                   {c.nextHearing ? `Prochaine audience : ${new Date(c.nextHearing).toLocaleDateString('fr-FR')}` : ''}
                 </span>
                 <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', padding: '2px 8px', borderRadius: 3, background: meta.bg, color: meta.color }}>
-                  {meta.label}
+                  {meta.label[lang]}
                 </span>
               </div>
             )

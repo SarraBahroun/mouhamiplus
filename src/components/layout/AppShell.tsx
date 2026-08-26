@@ -137,8 +137,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   ]
 
   const viewAsOptions: { id: CurrentUserId; label: string }[] = [
-    { id: 'self', label: realProfile ? `${tr.shell_maitre} ${realProfile.firstName} ${realProfile.lastName} (${ROLE_META[realProfile.role].label})` : tr.shell_me },
-    ...members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName} (${ROLE_META[m.role].label})` })),
+    { id: 'self', label: realProfile ? `${tr.shell_maitre} ${realProfile.firstName} ${realProfile.lastName} (${ROLE_META[realProfile.role].label[lang]})` : tr.shell_me },
+    ...members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName} (${ROLE_META[m.role].label[lang]})` })),
   ]
 
   return (

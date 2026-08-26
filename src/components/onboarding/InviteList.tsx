@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui/Input'
 import { SelectInput } from '@/components/ui/SelectInput'
+import { useLang } from '@/providers/LangProvider'
 
 export interface InviteRow {
   id: number
@@ -16,7 +17,7 @@ export function InviteList({
   rows,
   setRows,
   roleOptions,
-  addLabel = '+ Ajouter un membre',
+  addLabel,
   supervisableRoles = [],
 }: {
   rows: InviteRow[]
@@ -26,6 +27,8 @@ export function InviteList({
   /** Rôles (parmi roleOptions) qui comptent comme superviseurs possibles pour un stagiaire. */
   supervisableRoles?: string[]
 }) {
+  const { tr } = useLang()
+  const resolvedAddLabel = addLabel ?? tr.invite_add_member_label
   const update = (id: number, patch: Partial<InviteRow>) =>
     setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)))
 
@@ -37,18 +40,18 @@ export function InviteList({
   }
 
   const supervisorOptions = (currentRowId: number) => [
-    { value: '', label: '— Sélectionner —' },
-    { value: 'self', label: 'Vous-même' },
+    { value: '', label: tr.invite_select_placeholder },
+    { value: 'self', label: tr.invite_self },
     ...rows
       .filter((r) => r.id !== currentRowId && supervisableRoles.includes(r.role))
-      .map((r) => ({ value: String(r.id), label: r.name.trim() || 'Avocat (sans nom)' })),
+      .map((r) => ({ value: String(r.id), label: r.name.trim() || tr.invite_unnamed_lawyer })),
   ]
 
   return (
     <div className="flex flex-col gap-3">
       {rows.length === 0 && (
         <p style={{ fontSize: 13, color: 'var(--color-muted-foreground)', margin: 0 }}>
-          Aucun membre à inviter pour le moment.
+          {tr.invite_empty}
         </p>
       )}
       {rows.map((row) => (
@@ -72,12 +75,12 @@ export function InviteList({
               alignItems: 'end',
             }}
           >
-            <Input label="Nom" value={row.name} onChange={(v) => update(row.id, { name: v })} placeholder="Prénom Nom" />
-            <Input label="E-mail" type="email" value={row.email} onChange={(v) => update(row.id, { email: v })} placeholder="membre@cabinet.tn" />
-            <SelectInput label="Rôle" value={row.role} onChange={(v) => update(row.id, { role: v })} options={roleOptions} />
+            <Input label={tr.invite_name_label} value={row.name} onChange={(v) => update(row.id, { name: v })} placeholder={tr.invite_name_placeholder} />
+            <Input label={tr.invite_email_label} type="email" value={row.email} onChange={(v) => update(row.id, { email: v })} placeholder={tr.invite_email_placeholder} />
+            <SelectInput label={tr.invite_role_label} value={row.role} onChange={(v) => update(row.id, { role: v })} options={roleOptions} />
             <button
               onClick={() => remove(row.id)}
-              title="Retirer"
+              title={tr.invite_remove_title}
               style={{
                 width: 32,
                 height: 40,
@@ -95,7 +98,7 @@ export function InviteList({
           </div>
           {supervisableRoles.length > 0 && row.role === 'intern' && (
             <SelectInput
-              label="Superviseur *"
+              label={tr.invite_supervisor_label}
               value={String(row.supervisorRowId ?? '')}
               onChange={(v) => update(row.id, { supervisorRowId: v === 'self' ? 'self' : v ? Number(v) : '' })}
               options={supervisorOptions(row.id)}
@@ -117,7 +120,7 @@ export function InviteList({
           padding: 0,
         }}
       >
-        {addLabel}
+        {resolvedAddLabel}
       </button>
     </div>
   )
