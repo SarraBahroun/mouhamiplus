@@ -1,12 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useLang } from '@/providers/LangProvider'
 
-/** Menu burger visible uniquement sous le breakpoint sm — les liens de nav sont masqués (hidden sm:inline) sans remplacement en dessous. */
+/**
+ * Menu burger visible uniquement sous le breakpoint sm. Il porte à la fois les
+ * ancres de section (masquées en `hidden sm:inline` dans la nav) et les deux
+ * actions « S'inscrire » / « Accéder », elles aussi masquées sous sm : les trois
+ * éléments côte à côte débordaient de la largeur d'un téléphone.
+ */
 export function MobileNav() {
-  const { tr } = useLang()
+  const { tr, rtl } = useLang()
   const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // Le menu porte désormais les actions principales du site : il doit se fermer
+  // au clic à côté et à Échap, sinon il reste ouvert par-dessus la page.
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
 
   const LINKS = [
     { href: '#pourquoi', label: tr.home_nav_why },
@@ -14,8 +41,16 @@ export function MobileNav() {
     { href: '#abonnements', label: tr.home_nav_plans },
   ]
 
+  const itemStyle: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 500,
+    textDecoration: 'none',
+    padding: '10px 12px',
+    borderRadius: 6,
+  }
+
   return (
-    <div className="sm:hidden" style={{ position: 'relative' }}>
+    <div ref={rootRef} className="sm:hidden" style={{ position: 'relative' }}>
       <button
         type="button"
         aria-label={open ? tr.mk_mobilenav_close : tr.mk_mobilenav_open}
@@ -43,9 +78,15 @@ export function MobileNav() {
 
       {open && (
         <div
+          // La barre est forcée en LTR sous `sm` (.nav-bar-ltr-mobile) et ce menu
+          // n'existe que là : on rétablit le sens de la langue pour son contenu,
+          // sinon les libellés arabes s'alignent à gauche.
+          dir={rtl ? 'rtl' : 'ltr'}
           style={{
             position: 'absolute',
             top: '100%',
+            // Le bouton est collé au bord droit de la barre : le panneau s'aligne
+            // sur ce bord et se déploie vers l'intérieur de l'écran.
             right: 0,
             marginTop: 12,
             background: 'var(--color-navy-deep)',
@@ -64,18 +105,35 @@ export function MobileNav() {
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              style={{
-                color: 'var(--color-sky-soft)',
-                fontSize: 14,
-                fontWeight: 500,
-                textDecoration: 'none',
-                padding: '10px 12px',
-                borderRadius: 6,
-              }}
+              style={{ ...itemStyle, color: 'var(--color-sky-soft)' }}
             >
               {l.label}
             </a>
           ))}
+
+          <div style={{ height: 1, background: 'rgba(251,243,229,0.14)', margin: '6px 4px' }} />
+
+          <Link
+            href="/register"
+            onClick={() => setOpen(false)}
+            style={{ ...itemStyle, color: 'var(--color-cream)' }}
+          >
+            {tr.register}
+          </Link>
+          <Link
+            href="/acceder"
+            onClick={() => setOpen(false)}
+            style={{
+              ...itemStyle,
+              background: 'var(--color-cream)',
+              color: 'var(--color-navy)',
+              fontWeight: 600,
+              textAlign: 'center',
+              marginTop: 4,
+            }}
+          >
+            {tr.home_nav_enter}
+          </Link>
         </div>
       )}
     </div>

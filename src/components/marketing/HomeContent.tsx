@@ -250,10 +250,14 @@ export function HomeContent() {
         </div>
 
         <nav
-          className="animate-fade-down"
+          className="animate-fade-down nav-bar-ltr-mobile"
           style={{
             position: 'relative',
-            zIndex: 2,
+            // Au-dessus du contenu du hero (z-index 2) : la nav crée son propre
+            // contexte d'empilement, donc le menu burger ouvert — quel que soit son
+            // z-index interne — restait sous le bloc hero qui la suit dans le DOM.
+            // Le hero interceptait alors les clics sur les liens du menu.
+            zIndex: 10,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -284,15 +288,18 @@ export function HomeContent() {
             >
               {tr.home_nav_plans}
             </a>
-            <MobileNav />
+            {/* Sous sm, ces deux actions vivent dans le menu burger : les trois
+                côte à côte débordaient de la largeur d'un téléphone. */}
             <Link
               href="/register"
+              className="hidden sm:inline"
               style={{ color: 'var(--color-cream)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
             >
               {tr.register}
             </Link>
             <Link
               href="/acceder"
+              className="hidden sm:inline-block"
               style={{
                 background: 'var(--color-cream)',
                 color: 'var(--color-navy)',
@@ -305,6 +312,9 @@ export function HomeContent() {
             >
               {tr.home_nav_enter}
             </Link>
+            {/* En dernier : le burger se retrouve au bout de la barre, du côté
+                opposé au logo, au lieu d'être coincé avant les deux actions. */}
+            <MobileNav />
           </div>
         </nav>
 
