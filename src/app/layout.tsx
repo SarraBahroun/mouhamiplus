@@ -15,8 +15,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // `lang`/`dir` doivent refléter DEFAULT_LANG (LangProvider) : c'est le rendu servi
+  // avant que le provider n'applique la langue mémorisée du visiteur. Un `ar`/`rtl`
+  // figé ici provoquait un flash de mise en page inversée au premier chargement.
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="fr" dir="ltr" suppressHydrationWarning>
       <body>
         <LangProvider>
           <ToastProvider>

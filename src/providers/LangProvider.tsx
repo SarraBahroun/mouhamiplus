@@ -14,9 +14,10 @@ const LangContext = createContext<LangContextValue | null>(null)
 
 const STORAGE_KEY = 'mouhamiplus_lang'
 
-// Les avocats tunisiens travaillent principalement en arabe — c'est la langue par défaut,
-// pas une simple option parmi d'autres.
-const DEFAULT_LANG: Lang = 'ar'
+// Langue d'ouverture, uniquement pour un visiteur qui n'a jamais choisi : dès qu'il
+// utilise le sélecteur, son choix est mémorisé et prime. L'arabe reste une langue de
+// premier rang (traduction complète + RTL), c'est le point de départ qui est en français.
+const DEFAULT_LANG: Lang = 'fr'
 
 function readStoredLang(): Lang {
   if (typeof window === 'undefined') return DEFAULT_LANG

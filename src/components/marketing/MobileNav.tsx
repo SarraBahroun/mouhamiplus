@@ -2,16 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { LangSelector } from '@/components/ui/LangSelector'
 import { useLang } from '@/providers/LangProvider'
 
 /**
- * Menu burger visible uniquement sous le breakpoint sm. Il porte à la fois les
- * ancres de section (masquées en `hidden sm:inline` dans la nav) et les deux
- * actions « S'inscrire » / « Accéder », elles aussi masquées sous sm : les trois
- * éléments côte à côte débordaient de la largeur d'un téléphone.
+ * Menu burger visible uniquement sous le breakpoint sm. Il porte tout ce que la
+ * nav masque sous sm : les ancres de section, le sélecteur de langue et les deux
+ * actions « S'inscrire » / « Accéder » — côte à côte, ces éléments débordaient de
+ * la largeur d'un téléphone.
  */
 export function MobileNav() {
-  const { tr } = useLang()
+  const { tr, lang, setLang } = useLang()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -133,6 +134,13 @@ export function MobileNav() {
           >
             {tr.home_nav_enter}
           </Link>
+
+          {/* Le menu reste ouvert au changement de langue : on voit la traduction
+              s'appliquer sur place, et on peut corriger si on s'est trompé. */}
+          <div style={{ height: 1, background: 'rgba(251,243,229,0.14)', margin: '6px 4px' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0 2px' }}>
+            <LangSelector lang={lang} setLang={setLang} variant="onDark" />
+          </div>
         </div>
       )}
     </div>

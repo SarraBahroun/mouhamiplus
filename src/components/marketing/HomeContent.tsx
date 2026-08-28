@@ -7,6 +7,7 @@ import { SmoothAnchorLinks } from '@/components/ui/SmoothAnchorLinks'
 import { Eyebrow, SectionHeader } from '@/components/marketing/SectionHeader'
 import { ContactForm } from '@/components/marketing/ContactForm'
 import { MobileNav } from '@/components/marketing/MobileNav'
+import { LangSelector } from '@/components/ui/LangSelector'
 import { TYPE, SPACE } from '@/components/marketing/theme'
 import { useLang } from '@/providers/LangProvider'
 
@@ -70,7 +71,7 @@ function JusticeMark() {
 }
 
 export function HomeContent() {
-  const { tr, rtl } = useLang()
+  const { tr, rtl, lang, setLang } = useLang()
 
   const STATS = [
     { value: '2FA', label: tr.home_stat_security },
@@ -288,8 +289,12 @@ export function HomeContent() {
             >
               {tr.home_nav_plans}
             </a>
-            {/* Sous sm, ces deux actions vivent dans le menu burger : les trois
-                côte à côte débordaient de la largeur d'un téléphone. */}
+            {/* Sous sm, le sélecteur de langue et ces deux actions vivent dans le
+                menu burger : côte à côte ils débordaient de la largeur d'un
+                téléphone. */}
+            <span className="hidden sm:flex">
+              <LangSelector lang={lang} setLang={setLang} variant="onDark" />
+            </span>
             <Link
               href="/register"
               className="hidden sm:inline"
