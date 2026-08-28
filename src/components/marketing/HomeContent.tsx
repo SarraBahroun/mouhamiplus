@@ -507,7 +507,11 @@ export function HomeContent() {
                 style={{
                   flex: 1,
                   padding: '22px 12px',
-                  borderLeft: i === 0 ? 'none' : '1px solid rgba(251,243,229,0.14)',
+                  // Séparateur du côté « début » : avec un `borderLeft`, l'arabe
+                  // inversait l'ordre des colonnes mais pas celui des traits — il
+                  // manquait un séparateur entre les deux premières et il en
+                  // traînait un au bord de la bande.
+                  borderInlineStart: i === 0 ? 'none' : '1px solid rgba(251,243,229,0.14)',
                 }}
               >
                 <div
@@ -617,7 +621,9 @@ export function HomeContent() {
 
       {/* Notre engagement — charte en quatre articles, fond crème */}
       <section style={{ padding: '96px 24px 88px' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'left' }}>
+        {/* `start` et non `left` : en arabe toute la page s'inverse, un `left` figé
+            gardait la charte alignée à gauche pendant que le reste passait à droite. */}
+        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'start' }}>
           <SectionHeader
             eyebrow={tr.home_commitment_eyebrow}
             title={tr.home_commitment_title}
@@ -635,7 +641,11 @@ export function HomeContent() {
                     borderTop: '1px solid var(--color-border)',
                   }}
                 >
+                  {/* `dir="ltr"` : le point est un caractère neutre pour l'algorithme
+                      bidi — hérité du sens arabe, il passait à gauche du chiffre
+                      romain, qui s'affichait « .I » au lieu de « I. ». */}
                   <span
+                    dir="ltr"
                     style={{
                       fontFamily: 'var(--font-display)',
                       fontStyle: 'italic',
@@ -695,7 +705,8 @@ export function HomeContent() {
                       style={{
                         position: 'absolute',
                         top: -12,
-                        left: 26,
+                        // Suit la carte quand elle s'inverse en arabe.
+                        insetInlineStart: 26,
                         background: 'var(--color-navy)',
                         color: 'var(--color-cream)',
                         fontSize: 11,
