@@ -149,18 +149,6 @@ body {
   transform: translateY(0);
 }
 
-/* En-tête du site public sur téléphone : logo à gauche, burger à droite, quelle
-   que soit la langue. En arabe (RTL, langue par défaut) la barre s'inverse et
-   renverrait le burger à gauche, alors que la convention sur mobile — et ce que
-   le cabinet attend — est de l'avoir à droite. Limité en dessous de `sm` : au-delà
-   la nav reprend son sens naturel, et sous `sm` le burger est le seul élément du
-   groupe, donc aucun autre alignement ne dépend de ce sens. */
-@media (max-width: 639.98px) {
-  .nav-bar-ltr-mobile {
-    direction: ltr;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .animate-hero-logo, .animate-fade-up, .animate-fade-down, .animate-glow-float,
   .animate-ring-pulse, .aurora-bg, .grain-overlay, .animate-watermark-spin,

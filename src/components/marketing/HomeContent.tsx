@@ -250,7 +250,7 @@ export function HomeContent() {
         </div>
 
         <nav
-          className="animate-fade-down nav-bar-ltr-mobile"
+          className="animate-fade-down"
           style={{
             position: 'relative',
             // Au-dessus du contenu du hero (z-index 2) : la nav crée son propre
@@ -313,7 +313,9 @@ export function HomeContent() {
               {tr.home_nav_enter}
             </Link>
             {/* En dernier : le burger se retrouve au bout de la barre, du côté
-                opposé au logo, au lieu d'être coincé avant les deux actions. */}
+                opposé au logo, au lieu d'être coincé avant les deux actions. Le
+                côté suit la langue — à droite en français, à gauche en arabe,
+                comme le reste de la page. */}
             <MobileNav />
           </div>
         </nav>

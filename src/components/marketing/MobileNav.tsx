@@ -11,7 +11,7 @@ import { useLang } from '@/providers/LangProvider'
  * éléments côte à côte débordaient de la largeur d'un téléphone.
  */
 export function MobileNav() {
-  const { tr, rtl } = useLang()
+  const { tr } = useLang()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -78,16 +78,15 @@ export function MobileNav() {
 
       {open && (
         <div
-          // La barre est forcée en LTR sous `sm` (.nav-bar-ltr-mobile) et ce menu
-          // n'existe que là : on rétablit le sens de la langue pour son contenu,
-          // sinon les libellés arabes s'alignent à gauche.
-          dir={rtl ? 'rtl' : 'ltr'}
           style={{
             position: 'absolute',
             top: '100%',
-            // Le bouton est collé au bord droit de la barre : le panneau s'aligne
-            // sur ce bord et se déploie vers l'intérieur de l'écran.
-            right: 0,
+            // `insetInlineEnd` et non `right` : le bouton est au bout de la barre,
+            // donc à droite en français mais à gauche en arabe (la page entière
+            // s'inverse en RTL). Aligner sur le bord *de fin* fait déployer le
+            // panneau vers l'intérieur de l'écran dans les deux sens — un `right: 0`
+            // le faisait sortir de l'écran en arabe.
+            insetInlineEnd: 0,
             marginTop: 12,
             background: 'var(--color-navy-deep)',
             border: '1px solid rgba(251,243,229,0.14)',
