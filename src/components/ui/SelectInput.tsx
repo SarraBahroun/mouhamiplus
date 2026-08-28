@@ -8,13 +8,15 @@ export interface SelectInputProps {
   onChange: (v: string) => void
   options: { value: string; label: string }[]
   rtl?: boolean
+  id?: string
 }
 
-export function SelectInput({ label, value, onChange, options, rtl }: SelectInputProps) {
+export function SelectInput({ label, value, onChange, options, rtl, id }: SelectInputProps) {
   const [focused, setFocused] = useState(false)
   return (
     <div className="flex flex-col gap-1.5">
       <label
+        htmlFor={id}
         style={{
           fontFamily: 'var(--font-body)',
           fontSize: 13,
@@ -26,6 +28,7 @@ export function SelectInput({ label, value, onChange, options, rtl }: SelectInpu
         {label}
       </label>
       <select
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         dir={rtl ? 'rtl' : 'ltr'}

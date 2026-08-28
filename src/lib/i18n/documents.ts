@@ -58,8 +58,12 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_analysis_client: 'Client',
     ocr_analysis_case: 'Dossier',
     ocr_analysis_no_match: 'Aucun client ou dossier du cabinet ne correspond clairement à ce document.',
-    ocr_analysis_case_applied: 'Dossier sélectionné automatiquement d’après l’analyse — vérifiez avant de classer.',
     ocr_analysis_error: 'L’analyse du document a échoué — réessayez.',
+    ocr_analysis_choice_hint: 'Que faire de ce document ?',
+    ocr_analysis_use_suggested: 'Utiliser le dossier suggéré',
+    ocr_analysis_case_selected: 'Dossier sélectionné ✓',
+    ocr_analysis_choose_myself: 'Choisir moi-même le dossier',
+    ocr_analysis_new_case: 'Créer un nouveau dossier',
 
     // Recherche
     search_subtitle: 'Recherchez à travers vos dossiers, clients et documents',
@@ -128,8 +132,12 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_analysis_client: 'الموكل',
     ocr_analysis_case: 'الملف',
     ocr_analysis_no_match: 'لا يوجد موكل أو ملف في المكتب يطابق هذه الوثيقة بوضوح.',
-    ocr_analysis_case_applied: 'تم اختيار الملف تلقائيًا بناءً على التحليل — تحقق قبل التصنيف.',
     ocr_analysis_error: 'فشل تحليل الوثيقة — أعد المحاولة.',
+    ocr_analysis_choice_hint: 'ماذا تريد أن تفعل بهذه الوثيقة؟',
+    ocr_analysis_use_suggested: 'استعمال الملف المقترح',
+    ocr_analysis_case_selected: 'تم اختيار الملف ✓',
+    ocr_analysis_choose_myself: 'أختار الملف بنفسي',
+    ocr_analysis_new_case: 'إنشاء ملف جديد',
 
     // Recherche
     search_subtitle: 'ابحث في ملفاتك وموكليك ووثائقك',
@@ -198,8 +206,12 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_analysis_client: 'Client',
     ocr_analysis_case: 'Case',
     ocr_analysis_no_match: 'No client or case of the firm clearly matches this document.',
-    ocr_analysis_case_applied: 'Case selected automatically based on the analysis — double-check before filing.',
     ocr_analysis_error: 'Document analysis failed — please try again.',
+    ocr_analysis_choice_hint: 'What do you want to do with this document?',
+    ocr_analysis_use_suggested: 'Use the suggested case',
+    ocr_analysis_case_selected: 'Case selected ✓',
+    ocr_analysis_choose_myself: 'Choose the case myself',
+    ocr_analysis_new_case: 'Create a new case',
 
     // Recherche
     search_subtitle: 'Search across your cases, clients and documents',

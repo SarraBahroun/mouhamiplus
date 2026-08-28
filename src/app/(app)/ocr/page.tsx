@@ -255,9 +255,9 @@ export default function OcrPage() {
   }
 
   // Analyse IA du texte extrait : identifie le type de document, le résume, et
-  // le rapproche d'un client / dossier du cabinet. Si un dossier est suggéré et
-  // qu'aucun n'était encore choisi pour ce scan, il est pré-sélectionné (l'avocat
-  // garde la main : rien n'est classé sans clic sur le bouton de classement).
+  // le rapproche d'un client / dossier du cabinet. La suggestion n'est JAMAIS
+  // appliquée d'office : l'avocat choisit explicitement entre l'accepter, choisir
+  // lui-même un autre dossier, ou en créer un nouveau.
   const runAnalysis = useCallback(
     async (scanId: number, text: string) => {
       if (!text.trim()) return
@@ -280,13 +280,7 @@ export default function OcrPage() {
         prev.map((s) => {
           if (s.id !== scanId) return s
           if ('error' in result) return { ...s, analyzing: false, analysisError: tr.ocr_analysis_error }
-          const applySuggestedCase = Boolean(result.analysis.caseId) && !s.caseId
-          return {
-            ...s,
-            analyzing: false,
-            analysis: result.analysis,
-            caseId: applySuggestedCase ? (result.analysis.caseId as string) : s.caseId,
-          }
+          return { ...s, analyzing: false, analysis: result.analysis }
         })
       )
     },
@@ -424,6 +418,20 @@ export default function OcrPage() {
   const caseById = (id: string | null) => initialCases.find((c) => c.id === id)
   const clientById = (id: string | null) => clients.find((c) => c.id === id)
 
+  const caseSelectId = (scanId: number) => `scan-case-${scanId}`
+
+  // « Choisir moi-même » : on remet le sélecteur à zéro (pour que le choix soit un
+  // vrai geste de l'avocat, pas la suggestion laissée par défaut) et on lui donne
+  // le focus — sur mobile le sélecteur peut être hors écran, d'où le scroll.
+  const chooseCaseMyself = (scanId: number) => {
+    updateScanCase(scanId, '')
+    requestAnimationFrame(() => {
+      const el = document.getElementById(caseSelectId(scanId))
+      el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      el?.focus()
+    })
+  }
+
   const exportScanToPdf = async (scan: ScanResult) => {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -557,7 +565,9 @@ export default function OcrPage() {
             </p>
           ) : (
             <div className="flex flex-col gap-4">
-              {scans.map((s) => (
+              {scans.map((s) => {
+                const suggestedCaseId = s.analysis?.caseId ?? null
+                return (
                 <div key={s.id} style={{ border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-card)', padding: '14px 16px' }}>
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-foreground)' }}>
@@ -619,14 +629,33 @@ export default function OcrPage() {
                               {s.analysis.reason && (
                                 <div style={{ color: 'var(--color-muted-foreground)' }}>{s.analysis.reason}</div>
                               )}
-                              {s.analysis.caseId !== null && s.analysis.caseId === s.caseId && s.status !== 'saved' && (
-                                <div style={{ color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>
-                                  {tr.ocr_analysis_case_applied}
-                                </div>
-                              )}
                             </>
                           ) : (
                             <div style={{ color: 'var(--color-muted-foreground)' }}>{tr.ocr_analysis_no_match}</div>
+                          )}
+
+                          {s.status !== 'saved' && (
+                            <div style={{ marginTop: 6, paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
+                              <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 8 }}>
+                                {tr.ocr_analysis_choice_hint}
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {suggestedCaseId && (
+                                  <Btn
+                                    onClick={() => updateScanCase(s.id, suggestedCaseId)}
+                                    disabled={s.caseId === suggestedCaseId}
+                                  >
+                                    {s.caseId === suggestedCaseId ? tr.ocr_analysis_case_selected : tr.ocr_analysis_use_suggested}
+                                  </Btn>
+                                )}
+                                <Btn variant="secondary" onClick={() => chooseCaseMyself(s.id)}>
+                                  {tr.ocr_analysis_choose_myself}
+                                </Btn>
+                                <Btn variant="secondary" onClick={() => setNewCaseTarget(s.id)}>
+                                  + {tr.ocr_analysis_new_case}
+                                </Btn>
+                              </div>
+                            </div>
                           )}
                         </div>
                       ) : null}
@@ -636,6 +665,7 @@ export default function OcrPage() {
                   <div className="flex items-end justify-between gap-3 mt-3 flex-wrap">
                     <div style={{ maxWidth: 280, width: '100%' }}>
                       <SelectInput
+                        id={caseSelectId(s.id)}
                         label={tr.shell_case_file}
                         value={s.caseId}
                         onChange={(v) => (v === NEW_CASE_VALUE ? setNewCaseTarget(s.id) : updateScanCase(s.id, v))}
@@ -665,7 +695,8 @@ export default function OcrPage() {
                     </div>
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
