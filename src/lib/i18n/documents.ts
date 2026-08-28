@@ -51,6 +51,15 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_status_saving: 'Classement…',
     ocr_classify_button: 'Classer dans le dossier',
     ocr_choose_case_hint: 'Choisissez un dossier pour pouvoir classer cette numérisation.',
+    ocr_analyze_button: 'Analyser le document',
+    ocr_analyzing: 'Analyse en cours…',
+    ocr_analysis_title: 'Analyse intelligente',
+    ocr_analysis_doc_type: 'Type de document',
+    ocr_analysis_client: 'Client',
+    ocr_analysis_case: 'Dossier',
+    ocr_analysis_no_match: 'Aucun client ou dossier du cabinet ne correspond clairement à ce document.',
+    ocr_analysis_case_applied: 'Dossier sélectionné automatiquement d’après l’analyse — vérifiez avant de classer.',
+    ocr_analysis_error: 'L’analyse du document a échoué — réessayez.',
 
     // Recherche
     search_subtitle: 'Recherchez à travers vos dossiers, clients et documents',
@@ -112,6 +121,15 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_status_saving: 'جارٍ التصنيف…',
     ocr_classify_button: 'تصنيف ضمن الملف',
     ocr_choose_case_hint: 'اختر ملفًا لتتمكن من تصنيف هذا المسح الضوئي.',
+    ocr_analyze_button: 'تحليل الوثيقة',
+    ocr_analyzing: 'جارٍ التحليل…',
+    ocr_analysis_title: 'التحليل الذكي',
+    ocr_analysis_doc_type: 'نوع الوثيقة',
+    ocr_analysis_client: 'الموكل',
+    ocr_analysis_case: 'الملف',
+    ocr_analysis_no_match: 'لا يوجد موكل أو ملف في المكتب يطابق هذه الوثيقة بوضوح.',
+    ocr_analysis_case_applied: 'تم اختيار الملف تلقائيًا بناءً على التحليل — تحقق قبل التصنيف.',
+    ocr_analysis_error: 'فشل تحليل الوثيقة — أعد المحاولة.',
 
     // Recherche
     search_subtitle: 'ابحث في ملفاتك وموكليك ووثائقك',
@@ -173,6 +191,15 @@ export const documentsDict: Record<Lang, Record<string, string>> = {
     ocr_status_saving: 'Filing…',
     ocr_classify_button: 'File in case',
     ocr_choose_case_hint: 'Choose a case to file this scan.',
+    ocr_analyze_button: 'Analyze document',
+    ocr_analyzing: 'Analyzing…',
+    ocr_analysis_title: 'Smart analysis',
+    ocr_analysis_doc_type: 'Document type',
+    ocr_analysis_client: 'Client',
+    ocr_analysis_case: 'Case',
+    ocr_analysis_no_match: 'No client or case of the firm clearly matches this document.',
+    ocr_analysis_case_applied: 'Case selected automatically based on the analysis — double-check before filing.',
+    ocr_analysis_error: 'Document analysis failed — please try again.',
 
     // Recherche
     search_subtitle: 'Search across your cases, clients and documents',

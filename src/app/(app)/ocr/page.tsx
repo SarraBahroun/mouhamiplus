@@ -6,7 +6,7 @@ import { Btn } from '@/components/ui/Btn'
 import { SelectInput } from '@/components/ui/SelectInput'
 import { NewCaseModal } from '@/components/cases/NewCaseModal'
 import { exportTextToPdfPages } from '@/lib/arabic-pdf-export'
-import { transcribeDocument } from './actions'
+import { analyzeScannedDocument, transcribeDocument, type DocumentAnalysis } from './actions'
 import { useAppData } from '@/providers/AppDataProvider'
 import { useLang } from '@/providers/LangProvider'
 import { useSession } from '@/providers/SessionProvider'
@@ -21,6 +21,9 @@ interface ScanResult {
   caseId: string
   status: 'draft' | 'saving' | 'saved' | 'error'
   saveError?: string
+  analysis: DocumentAnalysis | null
+  analyzing: boolean
+  analysisError?: string
 }
 
 // `image/*` (plutôt qu'une liste jpg/png) : indispensable sur mobile — l'iPhone
@@ -172,9 +175,9 @@ function binarizeForOcr(context: CanvasRenderingContext2D, width: number, height
 }
 
 export default function OcrPage() {
-  const { cases: initialCases, addCaseDocument, addCaseNote } = useAppData()
+  const { cases: initialCases, clients, addCaseDocument, addCaseNote } = useAppData()
   const { currentUserName } = useSession()
-  const { tr, rtl } = useLang()
+  const { tr, rtl, lang } = useLang()
   const [caseId, setCaseId] = useState('')
   const [scans, setScans] = useState<ScanResult[]>([])
   const [processing, setProcessing] = useState(false)
@@ -251,6 +254,45 @@ export default function OcrPage() {
     setNewCaseTarget(null)
   }
 
+  // Analyse IA du texte extrait : identifie le type de document, le résume, et
+  // le rapproche d'un client / dossier du cabinet. Si un dossier est suggéré et
+  // qu'aucun n'était encore choisi pour ce scan, il est pré-sélectionné (l'avocat
+  // garde la main : rien n'est classé sans clic sur le bouton de classement).
+  const runAnalysis = useCallback(
+    async (scanId: number, text: string) => {
+      if (!text.trim()) return
+      setScans((prev) => prev.map((s) => (s.id === scanId ? { ...s, analyzing: true, analysisError: undefined } : s)))
+      const result = await analyzeScannedDocument({
+        text,
+        lang,
+        clients: clients.map((c) => ({ id: c.id, name: c.name })),
+        cases: initialCases.map((c) => ({
+          id: c.id,
+          reference: c.reference,
+          title: c.title,
+          clientId: c.clientId,
+          clientName: clients.find((cl) => cl.id === c.clientId)?.name ?? '',
+          practiceArea: c.practiceArea,
+        })),
+      }).catch(() => ({ error: tr.ocr_analysis_error }))
+
+      setScans((prev) =>
+        prev.map((s) => {
+          if (s.id !== scanId) return s
+          if ('error' in result) return { ...s, analyzing: false, analysisError: tr.ocr_analysis_error }
+          const applySuggestedCase = Boolean(result.analysis.caseId) && !s.caseId
+          return {
+            ...s,
+            analyzing: false,
+            analysis: result.analysis,
+            caseId: applySuggestedCase ? (result.analysis.caseId as string) : s.caseId,
+          }
+        })
+      )
+    },
+    [lang, clients, initialCases, tr]
+  )
+
   const processFile = useCallback(
     async (file: File) => {
       setError('')
@@ -325,9 +367,10 @@ export default function OcrPage() {
 
         const text = texts.filter(Boolean).join('\n\n').trim()
 
+        const scanId = Date.now()
         setScans((prev) => [
           {
-            id: Date.now(),
+            id: scanId,
             name: file.name,
             date: new Date().toLocaleString('fr-FR'),
             file,
@@ -335,9 +378,14 @@ export default function OcrPage() {
             text,
             caseId,
             status: 'draft',
+            analysis: null,
+            analyzing: false,
           },
           ...prev,
         ])
+        // Analyse lancée en arrière-plan dès la fin du scan — le texte est déjà
+        // affiché et éditable pendant ce temps.
+        if (text) void runAnalysis(scanId, text)
       } catch (e) {
         setError(e instanceof Error ? e.message : tr.ocr_error_scan_failed)
       } finally {
@@ -346,7 +394,7 @@ export default function OcrPage() {
         setProgressLabel('')
       }
     },
-    [caseId, tr, getWorker, docLang]
+    [caseId, tr, getWorker, docLang, runAnalysis]
   )
 
   const updateScanText = (id: number, text: string) => {
@@ -372,6 +420,9 @@ export default function OcrPage() {
     }
     setScans((prev) => prev.map((s) => (s.id === scan.id ? { ...s, status: 'saved' } : s)))
   }
+
+  const caseById = (id: string | null) => initialCases.find((c) => c.id === id)
+  const clientById = (id: string | null) => clients.find((c) => c.id === id)
 
   const exportScanToPdf = async (scan: ScanResult) => {
     const { jsPDF } = await import('jspdf')
@@ -537,6 +588,51 @@ export default function OcrPage() {
                     }}
                   />
 
+                  {(s.analyzing || s.analysis || s.analysisError) && (
+                    <div style={{ marginTop: 10, border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-secondary)', padding: '10px 14px' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', marginBottom: 6 }}>
+                        ✨ {tr.ocr_analysis_title}
+                      </div>
+                      {s.analyzing ? (
+                        <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>{tr.ocr_analyzing}</div>
+                      ) : s.analysisError ? (
+                        <div style={{ fontSize: 12, color: '#B3261E' }}>{s.analysisError}</div>
+                      ) : s.analysis ? (
+                        <div className="flex flex-col gap-1" style={{ fontSize: 12.5, color: 'var(--color-foreground)' }}>
+                          <div>
+                            <strong>{tr.ocr_analysis_doc_type}</strong> : {s.analysis.docType}
+                          </div>
+                          <div>{s.analysis.summary}</div>
+                          {s.analysis.clientId || s.analysis.caseId ? (
+                            <>
+                              {s.analysis.clientId && (
+                                <div>
+                                  <strong>{tr.ocr_analysis_client}</strong> : {clientById(s.analysis.clientId)?.name}
+                                </div>
+                              )}
+                              {s.analysis.caseId && (
+                                <div>
+                                  <strong>{tr.ocr_analysis_case}</strong> : {caseById(s.analysis.caseId)?.title}
+                                  {caseById(s.analysis.caseId)?.reference ? ` (${caseById(s.analysis.caseId)?.reference})` : ''}
+                                </div>
+                              )}
+                              {s.analysis.reason && (
+                                <div style={{ color: 'var(--color-muted-foreground)' }}>{s.analysis.reason}</div>
+                              )}
+                              {s.analysis.caseId !== null && s.analysis.caseId === s.caseId && s.status !== 'saved' && (
+                                <div style={{ color: 'var(--color-muted-foreground)', fontStyle: 'italic' }}>
+                                  {tr.ocr_analysis_case_applied}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div style={{ color: 'var(--color-muted-foreground)' }}>{tr.ocr_analysis_no_match}</div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
                   <div className="flex items-end justify-between gap-3 mt-3 flex-wrap">
                     <div style={{ maxWidth: 280, width: '100%' }}>
                       <SelectInput
@@ -548,6 +644,9 @@ export default function OcrPage() {
                       />
                     </div>
                     <div className="flex items-center gap-2">
+                      <Btn variant="secondary" onClick={() => runAnalysis(s.id, s.text)} disabled={s.analyzing || !s.text.trim()}>
+                        {s.analyzing ? tr.ocr_analyzing : tr.ocr_analyze_button}
+                      </Btn>
                       <Btn variant="secondary" onClick={() => exportScanToPdf(s)}>
                         {tr.ocr_export_pdf}
                       </Btn>
