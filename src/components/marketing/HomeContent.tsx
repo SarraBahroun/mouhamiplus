@@ -70,6 +70,13 @@ function JusticeMark() {
   )
 }
 
+// Coordonnées du cabinet, partagées par le bandeau de contact en haut de page et
+// la section Contact plus bas — le numéro existait sous deux formes (affichage et
+// lien tel:) à un seul endroit, il ne faut pas en faire une troisième copie.
+const CONTACT_EMAIL = 'mouhamiplus@gmail.com'
+const CONTACT_PHONE = '+216 50 521 135'
+const CONTACT_PHONE_HREF = 'tel:+21650521135'
+
 export function HomeContent() {
   const { tr, rtl, lang, setLang } = useLang()
 
@@ -123,16 +130,16 @@ export function HomeContent() {
   const CONTACT_ITEMS = [
     {
       label: tr.common_email,
-      value: 'mouhamiplus@gmail.com',
-      href: 'mailto:mouhamiplus@gmail.com',
+      value: CONTACT_EMAIL,
+      href: `mailto:${CONTACT_EMAIL}`,
       icon: (
         <path d="M2 4h16v12H2V4zm0 0l8 6 8-6" stroke="var(--color-navy)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
       ),
     },
     {
       label: tr.common_phone,
-      value: '+216 50 521 135',
-      href: 'tel:+21650521135',
+      value: CONTACT_PHONE,
+      href: CONTACT_PHONE_HREF,
       icon: (
         <path
           d="M4 3h3l2 5-2 1a10 10 0 005 5l1-2 5 2v3a1 1 0 01-1 1A15 15 0 013 4a1 1 0 011-1z"
@@ -250,6 +257,65 @@ export function HomeContent() {
           <JusticeMark />
         </div>
 
+        {/* Bandeau de coordonnées : un cabinet cherche d'abord à savoir qui on est
+            et comment nous joindre — l'info était uniquement tout en bas de page. */}
+        <div
+          className="animate-fade-down flex items-center justify-center sm:justify-end flex-wrap"
+          style={{
+            position: 'relative',
+            zIndex: 10,
+            gap: '6px 20px',
+            padding: '8px 28px',
+            fontSize: TYPE.caption,
+            color: 'var(--color-sky-soft)',
+            borderBottom: '1px solid rgba(251,243,229,0.08)',
+          }}
+        >
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="flex items-center gap-1.5"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M2 4h16v12H2V4zm0 0l8 6 8-6" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {CONTACT_EMAIL}
+          </a>
+          <a
+            href={CONTACT_PHONE_HREF}
+            className="flex items-center gap-1.5"
+            // `dir="ltr"` : un numéro commençant par « + » se réorganise en arabe
+            // (le signe passe à la fin) s'il hérite du sens RTL de la page.
+            dir="ltr"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path
+                d="M4 3h3l2 5-2 1a10 10 0 005 5l1-2 5 2v3a1 1 0 01-1 1A15 15 0 013 4a1 1 0 011-1z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {CONTACT_PHONE}
+          </a>
+          <span className="hidden sm:flex items-center gap-1.5">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path
+                d="M10 18s6-5.5 6-10a6 6 0 10-12 0c0 4.5 6 10 6 10z M10 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {tr.home_contact_address_value}
+          </span>
+        </div>
+
         <nav
           className="animate-fade-down"
           style={{
@@ -275,19 +341,22 @@ export function HomeContent() {
             >
               {tr.home_nav_why}
             </a>
-            <a
-              href="#contact"
-              className="hidden sm:inline"
-              style={{ color: 'var(--color-sky-soft)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
-            >
-              {tr.home_nav_contact}
-            </a>
+            {/* Ordre calqué sur celui des sections dans la page (pourquoi →
+                abonnements → contact) : « Contact » venait en deuxième alors que sa
+                section est la dernière. */}
             <a
               href="#abonnements"
               className="hidden sm:inline"
               style={{ color: 'var(--color-sky-soft)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
             >
               {tr.home_nav_plans}
+            </a>
+            <a
+              href="#contact"
+              className="hidden sm:inline"
+              style={{ color: 'var(--color-sky-soft)', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
+            >
+              {tr.home_nav_contact}
             </a>
             {/* Sous sm, le sélecteur de langue et ces deux actions vivent dans le
                 menu burger : côte à côte ils débordaient de la largeur d'un
@@ -333,7 +402,9 @@ export function HomeContent() {
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            padding: '88px 24px 0',
+            // Réduit depuis 88px : le bandeau de coordonnées ajoute une ligne au-dessus
+            // et le sur-titre a disparu — sans ça le titre descendait sous la ligne de flottaison.
+            padding: '68px 24px 0',
             gap: 20,
           }}
         >
@@ -341,10 +412,9 @@ export function HomeContent() {
             <HeroLogo size={60} />
           </div>
 
-          <div className="animate-fade-up" style={{ animationDelay: '0.25s' }}>
-            <Eyebrow>{tr.home_eyebrow}</Eyebrow>
-          </div>
-
+          {/* Pas de sur-titre ici : il reprenait mot pour mot le logo juste au-dessus
+              et le titre juste en dessous. Le retirer laisse le titre porter seul le
+              regard, ce qui est tout l'objet de cette zone. */}
           <h1
             className="animate-fade-up"
             style={{
@@ -353,14 +423,25 @@ export function HomeContent() {
               fontSize: TYPE.hero,
               color: 'var(--color-cream)',
               margin: 0,
-              maxWidth: 780,
-              lineHeight: 1.1,
+              maxWidth: 900,
+              lineHeight: 1.03,
+              letterSpacing: '-0.02em',
               animationDelay: '0.4s',
               textWrap: 'balance' as React.CSSProperties['textWrap'],
             }}
           >
             {tr.home_hero_title_pre}{' '}
-            <em style={{ color: 'var(--color-sky)', fontStyle: 'italic' }}>{tr.home_hero_title_em}</em>
+            <em
+              style={{
+                color: 'var(--color-sky)',
+                fontStyle: 'italic',
+                // Le mot qui porte la promesse : détaché du reste par la taille
+                // autant que par la couleur.
+                fontSize: '1.12em',
+              }}
+            >
+              {tr.home_hero_title_em}
+            </em>
           </h1>
 
           <p
@@ -368,9 +449,9 @@ export function HomeContent() {
             style={{
               fontSize: TYPE.heroLead,
               color: 'var(--color-sky-soft)',
-              maxWidth: 540,
+              maxWidth: 620,
               margin: 0,
-              lineHeight: 1.65,
+              lineHeight: 1.5,
               animationDelay: '0.6s',
             }}
           >

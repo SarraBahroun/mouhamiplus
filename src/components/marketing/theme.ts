@@ -10,11 +10,13 @@ export const TYPE = {
   body: 14,
   bodyStrong: 14.5,
   intro: 15,
-  heroLead: 16.5,
+  // Le hero ne porte plus qu'une phrase courte : elle peut être nettement plus
+  // grande sans encombrer, et c'est ce qui la rend lisible d'un coup d'œil.
+  heroLead: 'clamp(17px, 2vw, 20px)',
   cardTitle: 19,
   stat: 22,
   heading: 'clamp(26px, 3.4vw, 34px)',
-  hero: 'clamp(34px, 6vw, 64px)',
+  hero: 'clamp(40px, 7.6vw, 82px)',
   statLarge: 32,
   statXL: 40,
 } as const

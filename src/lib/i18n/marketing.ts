@@ -16,7 +16,7 @@ export const marketingDict: Record<Lang, Record<string, string>> = {
     home_eyebrow: 'Mouhami+ · plateforme juridique',
     home_hero_title_pre: 'La plateforme juridique de',
     home_hero_title_em: 'confiance',
-    home_hero_lead: 'Cabinets, avocats indépendants et clients : gérez vos dossiers, vos échanges et vos factures au même endroit, en toute sécurité.',
+    home_hero_lead: 'Dossiers, échanges, factures — au même endroit, en toute sécurité.',
     home_hero_cta_enter: 'Entrer dans mon espace',
 
     // Stats
@@ -115,7 +115,7 @@ export const marketingDict: Record<Lang, Record<string, string>> = {
     home_eyebrow: 'محامي+ · منصة قانونية',
     home_hero_title_pre: 'منصتك القانونية',
     home_hero_title_em: 'الموثوقة',
-    home_hero_lead: 'مكاتب المحاماة، المحامون المستقلون وموكلوهم: أدر ملفاتك ومراسلاتك وفواتيرك في مكان واحد، بأمان تام.',
+    home_hero_lead: 'الملفات، المراسلات، الفواتير — في مكان واحد، بأمان تام.',
     home_hero_cta_enter: 'الدخول إلى فضائي',
 
     home_stat_security: 'الحماية بخطوتين مفعّلة تلقائياً',
@@ -204,7 +204,7 @@ export const marketingDict: Record<Lang, Record<string, string>> = {
     home_eyebrow: 'Mouhami+ · legal platform',
     home_hero_title_pre: 'The trusted legal',
     home_hero_title_em: 'platform',
-    home_hero_lead: 'Firms, independent lawyers and clients: manage your cases, correspondence and invoices in one place, securely.',
+    home_hero_lead: 'Cases, correspondence, invoices — in one place, securely.',
     home_hero_cta_enter: 'Enter my space',
 
     home_stat_security: '2FA enabled by default',

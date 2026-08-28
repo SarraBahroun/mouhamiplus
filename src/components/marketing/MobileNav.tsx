@@ -36,10 +36,11 @@ export function MobileNav() {
     }
   }, [open])
 
+  // Même ordre que les sections dans la page : pourquoi → abonnements → contact.
   const LINKS = [
     { href: '#pourquoi', label: tr.home_nav_why },
-    { href: '#contact', label: tr.home_nav_contact },
     { href: '#abonnements', label: tr.home_nav_plans },
+    { href: '#contact', label: tr.home_nav_contact },
   ]
 
   const itemStyle: React.CSSProperties = {
