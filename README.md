@@ -4,6 +4,8 @@
 
 Mouhami+ réunit en une seule plateforme tout ce dont un cabinet a besoin au quotidien : dossiers, audiences, clients, documents, facturation et équipe, avec un espace dédié pour les clients et des outils d'intelligence artificielle.
 
+🔗 **Démo en ligne : [mouhamiplus.vercel.app](https://mouhamiplus.vercel.app)**
+
 Projet conçu et réalisé par **Sarah Bahroun** (cheffe de projet) dans le cadre de l'incubateur **iLab Sfax** (2026), à partir d'une étude terrain menée auprès d'avocats tunisiens.
 
 ---
