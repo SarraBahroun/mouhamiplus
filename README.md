@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mouhami+ ⚖️
 
-## Getting Started
+**Application web de gestion de cabinet pour les avocats tunisiens.**
 
-First, run the development server:
+Mouhami+ réunit en une seule plateforme tout ce dont un cabinet a besoin au quotidien : dossiers, audiences, clients, documents, facturation et équipe, avec un espace dédié pour les clients et des outils d'intelligence artificielle.
+
+Projet conçu et réalisé par **Sarah Bahroun** (cheffe de projet) dans le cadre de l'incubateur **iLab Sfax** (2026), à partir d'une étude terrain menée auprès d'avocats tunisiens.
+
+---
+
+## ✨ Fonctionnalités
+
+### Espace cabinet (avocat et équipe)
+- **Tableau de bord** : vue d'ensemble de l'activité du cabinet.
+- **Dossiers** : création, suivi par étapes procédurales, documents associés.
+- **Audiences et agenda** : calendrier des audiences et des rendez-vous, juridictions tunisiennes intégrées.
+- **Délais légaux** : règles de délais configurables avec rappels.
+- **Clients** : fiches clients, historique et dossiers liés.
+- **Documents, contrats et correspondance** : stockage et organisation des pièces.
+- **Facturation et paiements** : factures, suivi des paiements, rapports financiers.
+- **Messagerie** interne et **recherche** globale.
+
+### Gestion d'équipe
+- Ajout de membres par rôle : associé, collaborateur, stagiaire, secrétaire.
+- **Permissions détaillées** par membre et **journal d'audit** des actions.
+
+### Espace client
+- Portail sécurisé où le client consulte ses dossiers, documents et factures, et demande un rendez-vous.
+
+### Intelligence artificielle
+- **Assistant juridique**, **génération** de documents et **résumé** de pièces (Google Gemini).
+- **OCR** : extraction du texte des PDF et images scannés (Tesseract.js).
+- **Export PDF** compatible avec l'arabe.
+
+### Sécurité et accessibilité
+- Authentification avec **double authentification (2FA)**.
+- Contrôle d'accès au niveau de la base de données (**Row Level Security** Supabase).
+- Interface **trilingue : français, arabe (RTL) et anglais**.
+
+---
+
+## 🛠️ Stack technique
+
+| Domaine | Technologies |
+|---|---|
+| Front-end | Next.js (App Router), React, TypeScript, Tailwind CSS |
+| Back-end et base de données | Supabase (PostgreSQL, Auth, Storage, RLS), migrations SQL |
+| IA et documents | Google Gemini, Tesseract.js, pdf.js, jsPDF |
+| E-mails | Nodemailer (Gmail) ou Resend |
+
+---
+
+## 🚀 Lancer le projet en local
 
 ```bash
+git clone https://github.com/SarraBahroun/mouhamiplus.git
+cd mouhamiplus
+npm install
+cp .env.example .env.local   # puis remplir les clés Supabase et e-mail
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+L'application est ensuite disponible sur http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Les migrations de la base se trouvent dans `supabase/migrations/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 👩‍💻 Autrice
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Sarah Bahroun**, développeuse web junior et cheffe de projet
+[LinkedIn](https://www.linkedin.com/in/sarah-bahroun-7369aa339) · [GitHub](https://github.com/SarraBahroun)
